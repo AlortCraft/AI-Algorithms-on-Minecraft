@@ -6,9 +6,9 @@ mineflayer = require('mineflayer')
 print("🤖 Inicializando o Bot com rastreamento de vetor... Aguarde.")
 
 bot = mineflayer.createBot({
-    'host': '127.0.0.1',       
-    'port': 62837,             # Certifique-se de usar a porta correta do seu mapa
-    'username': 'Python_Bot',  
+    'host': '100.110.191.127',       
+    'port': 25565,             # Certifique-se de usar a porta correta do seu mapa
+    'username': 'Cleitinho',  
     'hideErrors': False        
 })
 
