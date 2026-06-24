@@ -1,10 +1,15 @@
-class Problem:
-    def __init__(self, inistate, goal, actions, mapa):
-        self.inistate = inistate
-        self.actions = actions
-        self.goal = goal
+from javascript import require, On
 
-        self.mapa = mapa
+vec3 = require('vec3')
+
+
+class Problem:
+    def __init__(self, bot, inistate, goal, y_fixo, actions):
+        self.bot = bot
+        self.inistate = inistate
+        self.goal = goal
+        self.y_fixo = y_fixo
+        self.actions = actions
 
     def getinitialState(self):
         return self.inistate
@@ -14,29 +19,33 @@ class Problem:
 
     def getSucessors(self, state):
         sucessors = []
+        x, z = state
 
-        if state in self.mapa:
-            for next_state, action, cost in self.mapa[state]:
-                tupla_sucessor = (next_state, action, cost)
-                sucessors.append(tupla_sucessor)
+        
+        for acao, (dx, dz) in self.actions.items():
+            nx = x + dx
+            nz = z + dz
+
+            # 1. Instanciando os vetores nas 3 alturas críticas do bloco vizinho
+            pos_pes = vec3(nx, self.y_fixo, nz)
+            pos_cabeca = vec3(nx, self.y_fixo + 1, nz)
+            pos_chao = vec3(nx, self.y_fixo - 1, nz)
+
+            # 2. Disparando os sensores do Mineflayer
+            bloco_pes = self.bot.blockAt(pos_pes)
+            bloco_cabeca = self.bot.blockAt(pos_cabeca)
+            bloco_chao = self.bot.blockAt(pos_chao)
+
+            # 3. Lógica de Validação Física
+            # Verifica se os blocos existem na memória antes de checar as propriedades
+            if bloco_pes and bloco_cabeca and bloco_chao:
+                pes_livre = (bloco_pes.name == 'air')
+                cabeca_livre = (bloco_cabeca.name == 'air')
+                chao_firme = (bloco_chao.name != 'air') 
+
+                # Se o caminho for passável, ele se torna um nó válido no grafo
+                if pes_livre and cabeca_livre and chao_firme:
+                    tupla_sucessor = ((nx, nz), acao, 1)
+                    sucessors.append(tupla_sucessor)
 
         return sucessors
-
-    def getCost(self, actions):
-        totalCost = 0
-        actualState = self.inistate
-
-        for acao in actions:
-            acao_valida = False
-
-            for next_state, acao_possivel, step_cost in self.getSucessors(actualState):
-                if acao == acao_possivel:
-                    totalCost += step_cost
-                    actualState = next_state
-                    acao_valida = True
-                    break
-
-            if not acao_valida:
-                raise Exception("Ação Invalida")
-                
-        return totalCost

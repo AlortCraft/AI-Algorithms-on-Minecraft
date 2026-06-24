@@ -1,9 +1,25 @@
 from javascript import require, On
 import time
+import math
+import threading
+
+import sys
+from pathlib import Path
+
+pasta_src = str(Path(__file__).resolve().parent.parent)
+if pasta_src not in sys.path:
+    sys.path.append(pasta_src)
+
+from algorithms.buscas_cegas import BFS, DFS
+from algorithms.classes_problemas import Problem
+
 
 mineflayer = require('mineflayer')
 
 print("🤖 Inicializando o Bot com rastreamento de vetor... Aguarde.")
+
+
+vec3 = require('vec3')
 
 bot = mineflayer.createBot({
     'host': '100.110.191.127',       
@@ -12,70 +28,96 @@ bot = mineflayer.createBot({
     'hideErrors': False        
 })
 
-# Variável global para armazenar a entidade (o corpo) do player que queremos seguir
-player_alvo = None
+
+def andar_para(x, z):
+    centro_x = x + .5
+    centro_z = z + .5
+    pos_y = bot.entity.position.y
+
+    alvo = vec3(centro_x, pos_y, centro_z)
+
+    bot.lookAt(alvo)
+
+    bot.setControlState("forward", True)
+
+    movendo = True
+    while movendo:
+        distancia = bot.entity.position.distanceTo(alvo)
+
+        if distancia <= .5:
+            bot.setControlState("forward", False)
+            movendo = False
+
+        # impedindo sobrecarga
+        time.sleep(0.05)
+
+
+def resolver_labirinto(inicio, fim, y_sempre, algoritmo):
+    actions = {
+        "lado1": (1, 0),
+        "lado2": (-1, 0),
+        "lado3": (0, 1),
+        "lado4": (0, -1)
+    }
+
+    labirinto = Problem(bot, inicio, fim, y_sempre, actions)
+
+    if algoritmo == "BFS":
+        caminho = BFS(labirinto)
+    elif algoritmo == "DFS":
+        caminho = DFS(labirinto)
+
+
+    x_alvo, z_alvo = inicio
+    for direcao in caminho:
+        if direcao == "lado1":
+            x_alvo += 1
+        elif direcao == "lado2":
+            x_alvo -= 1
+        elif direcao == "lado3":
+            z_alvo += 1
+        elif direcao == "lado4":
+            z_alvo -= 1
+
+        andar_para(x_alvo, z_alvo)
+        #bot.chat(f"/setblock {x_alvo} {y_sempre-1} {z_alvo} minecraft:red_concrete")
+        #print(direcao)
+
+    if x_alvo == fim[0] and z_alvo == fim[1]:
+        bot.chat("Terminei o labirinto!")
+    
+
+
 
 @On(bot, 'spawn')
-def handle_spawn(*args):
-    print(f"✅ {bot.username} pronto para rastrear!")
+def handle_spawn():
+    """Disparado quando o bot nasce fisicamente no mundo."""
+    print(f"[{bot.username}] Conectado e pronto para o experimento!")
+    bot.chat("Olá mundo! Pronto para os testes.")
 
-# --- 1. ESCUTANDO O CHAT PARA ATIVAR O RASTREAMENTO ---
+
 @On(bot, 'messagestr')
-def handle_message(message, position, *args):
-    global player_alvo
-    texto_chat = str(message).lower()
+def handle_message(message, position, jsonMsg, sender, verification=None):
+    """O 'verification=None' torna o parâmetro opcional, evitando o crash."""
+    print(f"📡 Chat lido: {message}")
     
-    if bot.username.lower() in texto_chat:
-        return
+    if "teleporte" in message:
+        bot.chat(f"/tp {bot.username} TrainedDrop")
 
-    if "venha" in texto_chat or "ande para mim" in texto_chat:
-        bot.chat("Buscando sua assinatura de posicao...")
+    if "teste andar" in message:
+        threading.Thread(target=andar_para, args=(-23, 13)).start()
+
+    if "labirinto BFS" in message:
+        # Teleportar para posicao inicial
+        bot.chat(f"/tp -7 94 25")
+
+        threading.Thread(target=resolver_labirinto, args=((-7, 25), (-6, 67), 94, "BFS")).start()
+
+    if "labirinto DFS" in message:
+        # Teleportar para posicao inicial
+        bot.chat(f"/tp -7 94 25")
+
+        threading.Thread(target=resolver_labirinto, args=((-7, 25), (-6, 67), 94, "DFS")).start()
+
+
         
-        # Varre todas as entidades (mobs, players, itens) que o bot consegue ver
-        for entity_id in bot.entities:
-            entity = bot.entities[entity_id]
-            
-            # Se for um jogador e nao for o próprio bot, encontramos o mestre!
-            if entity.type == 'player' and entity.username != bot.username:
-                player_alvo = entity
-                bot.chat(f"Alvo encontrado: {entity.username}. Iniciando aproximacao!")
-                return
-        
-        # Se saiu do loop e nao encontrou nada
-        bot.chat("Nao consegui te avistar. Chegue mais perto de mim!")
-
-    elif "pare" in texto_chat:
-        bot.chat("Parando rastreamento.")
-        player_alvo = None
-        bot.setControlState('forward', False)
-
-
-# --- 2. A MALHA DE CONTROLE (Executa 20 vezes por segundo) ---
-@On(bot, 'physicsTick')
-def handle_tick(*args):
-    global player_alvo
-    
-    # Se nao tiver nenhum jogador como alvo, nao faz nada
-    if player_alvo is None:
-        return
-
-    # Posição atual do bot e do jogador (Vetores 3D)
-    pos_bot = bot.entity.position
-    pos_alvo = player_alvo.position
-
-    # Calcula a Distancia Euclidiana 3D entre o bot e você
-    # O Mineflayer ja tem a funcao .distanceTo() nativa nos vetores
-    distancia = pos_bot.distanceTo(pos_alvo)
-
-    # Margem de seguranca: Se estiver a mais de 2 blocos de distancia, continue andando
-    if distancia > 2.2:
-        # 1. Faz o bot girar a "cabeca" e o corpo exatamente na direcao do jogador
-        bot.lookAt(pos_alvo)
-        
-        # 2. Ativa o W para andar para frente
-        bot.setControlState('forward', True)
-    else:
-        # Se chegou a menos de 2 blocos, para de andar para nao empurrar o player
-        bot.setControlState('forward', False)
-        bot.chat("Cheguei ao destino!")
-        player_alvo = None # Desliga o rastreamento ate o proximo comando
