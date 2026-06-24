@@ -16,6 +16,17 @@ class Problem:
 
     def GoalState(self, state):
         return state == self.goal
+    
+    def heuristic(self, state):
+        # pela distancia de manhattan
+        x, z = state
+
+        x_alvo, z_alvo = self.goal
+
+        distancia = abs(x - x_alvo) + abs(z - z_alvo)
+        print(distancia)
+
+        return distancia
 
     def getSucessors(self, state):
         sucessors = []

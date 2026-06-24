@@ -10,13 +10,15 @@ pasta_src = str(Path(__file__).resolve().parent.parent)
 if pasta_src not in sys.path:
     sys.path.append(pasta_src)
 
-from algorithms.buscas_cegas import BFS, DFS
 from algorithms.classes_problemas import Problem
+from algorithms.buscas_cegas import BFS, DFS
+from algorithms.buscas_informadas import dijkstra, A_star
+
 
 
 mineflayer = require('mineflayer')
 
-print("🤖 Inicializando o Bot com rastreamento de vetor... Aguarde.")
+print("🤖 Inicializando o Bot...")
 
 
 vec3 = require('vec3')
@@ -66,6 +68,10 @@ def resolver_labirinto(inicio, fim, y_sempre, algoritmo):
         caminho = BFS(labirinto)
     elif algoritmo == "DFS":
         caminho = DFS(labirinto)
+    elif algoritmo == "dijkstra":
+        caminho = DFS(labirinto)
+    elif algoritmo == "A*":
+        caminho = A_star(labirinto)
 
 
     x_alvo, z_alvo = inicio
@@ -80,7 +86,7 @@ def resolver_labirinto(inicio, fim, y_sempre, algoritmo):
             z_alvo -= 1
 
         andar_para(x_alvo, z_alvo)
-        #bot.chat(f"/setblock {x_alvo} {y_sempre-1} {z_alvo} minecraft:red_concrete")
+        bot.chat(f"/setblock {x_alvo} {y_sempre-1} {z_alvo} minecraft:green_concrete")
         #print(direcao)
 
     if x_alvo == fim[0] and z_alvo == fim[1]:
@@ -118,6 +124,18 @@ def handle_message(message, position, jsonMsg, sender, verification=None):
         bot.chat(f"/tp -7 94 25")
 
         threading.Thread(target=resolver_labirinto, args=((-7, 25), (-6, 67), 94, "DFS")).start()
+
+    if "labirinto DJ" in message:
+        # Teleportar para posicao inicial
+        bot.chat(f"/tp -7 94 25")
+
+        threading.Thread(target=resolver_labirinto, args=((-7, 25), (-6, 67), 94, "dijkstra")).start()
+
+    if "labirinto A*" in message:
+        # Teleportar para posicao inicial
+        bot.chat(f"/tp -7 94 25")
+
+        threading.Thread(target=resolver_labirinto, args=((-7, 25), (-6, 67), 94, "A*")).start()
 
 
         
