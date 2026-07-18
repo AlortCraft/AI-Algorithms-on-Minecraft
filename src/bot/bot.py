@@ -25,7 +25,7 @@ vec3 = require('vec3')
 
 bot = mineflayer.createBot({
     'host': '100.110.191.127',       
-    'port': 25565,             # Certifique-se de usar a porta correta do seu mapa
+    'port': 25565,
     'username': 'Cleitinho',  
     'hideErrors': False        
 })
@@ -97,7 +97,6 @@ def resolver_labirinto(inicio, fim, y_sempre, algoritmo):
 
 @On(bot, 'spawn')
 def handle_spawn():
-    """Disparado quando o bot nasce fisicamente no mundo."""
     print(f"[{bot.username}] Conectado e pronto para o experimento!")
     bot.chat("Olá mundo! Pronto para os testes.")
 

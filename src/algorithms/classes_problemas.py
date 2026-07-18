@@ -37,24 +37,23 @@ class Problem:
             nx = x + dx
             nz = z + dz
 
-            # 1. Instanciando os vetores nas 3 alturas críticas do bloco vizinho
+            # Instanciando nas 3 alturas do bloco vizinho
             pos_pes = vec3(nx, self.y_fixo, nz)
             pos_cabeca = vec3(nx, self.y_fixo + 1, nz)
             pos_chao = vec3(nx, self.y_fixo - 1, nz)
 
-            # 2. Disparando os sensores do Mineflayer
+            # Disparando os sensores do Mineflayer
             bloco_pes = self.bot.blockAt(pos_pes)
             bloco_cabeca = self.bot.blockAt(pos_cabeca)
             bloco_chao = self.bot.blockAt(pos_chao)
 
-            # 3. Lógica de Validação Física
-            # Verifica se os blocos existem na memória antes de checar as propriedades
+            # Verifica se os blocos existem antes de checar
             if bloco_pes and bloco_cabeca and bloco_chao:
                 pes_livre = (bloco_pes.name == 'air')
                 cabeca_livre = (bloco_cabeca.name == 'air')
                 chao_firme = (bloco_chao.name != 'air') 
 
-                # Se o caminho for passável, ele se torna um nó válido no grafo
+                # Se o caminho for passável, ele se torna válido
                 if pes_livre and cabeca_livre and chao_firme:
                     tupla_sucessor = ((nx, nz), acao, 1)
                     sucessors.append(tupla_sucessor)
