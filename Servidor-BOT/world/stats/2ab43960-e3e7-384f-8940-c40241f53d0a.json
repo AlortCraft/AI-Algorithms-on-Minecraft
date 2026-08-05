@@ -1,0 +1,43 @@
+{
+  "stats": {
+    "minecraft:used": {
+      "minecraft:oak_fence": 42,
+      "minecraft:grass_block": 45,
+      "minecraft:birch_door": 1,
+      "minecraft:white_concrete": 88,
+      "minecraft:white_stained_glass": 22,
+      "minecraft:red_concrete": 3,
+      "minecraft:jungle_door": 1,
+      "minecraft:orange_concrete": 83,
+      "minecraft:sea_lantern": 25,
+      "minecraft:stone": 27,
+      "minecraft:pale_oak_door": 4,
+      "minecraft:oak_sign": 1,
+      "minecraft:light_blue_concrete": 102,
+      "minecraft:lime_concrete": 3,
+      "minecraft:dirt": 26
+    },
+    "minecraft:picked_up": {
+      "minecraft:dandelion": 6,
+      "minecraft:wheat_seeds": 8,
+      "minecraft:wildflowers": 18,
+      "minecraft:azure_bluet": 1
+    },
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 256406,
+      "minecraft:walk_one_cm": 135141,
+      "minecraft:leave_game": 18,
+      "minecraft:damage_dealt": 50,
+      "minecraft:play_time": 256406,
+      "minecraft:jump": 251,
+      "minecraft:time_since_death": 256406,
+      "minecraft:sprint_one_cm": 20778,
+      "minecraft:fall_one_cm": 225,
+      "minecraft:total_world_time": 256406,
+      "minecraft:fly_one_cm": 930519,
+      "minecraft:crouch_one_cm": 719,
+      "minecraft:sneak_time": 2489
+    }
+  },
+  "DataVersion": 4671
+}
