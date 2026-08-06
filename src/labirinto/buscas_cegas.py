@@ -1,4 +1,4 @@
-from .classes_problemas import Problem
+from .problema import Problem
 from collections import deque
 import time
 

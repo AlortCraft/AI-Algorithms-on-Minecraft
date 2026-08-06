@@ -10,9 +10,9 @@ pasta_src = str(Path(__file__).resolve().parent.parent)
 if pasta_src not in sys.path:
     sys.path.append(pasta_src)
 
-from algorithms.buscas.classes_problemas import Problem
-from algorithms.buscas.buscas_cegas import BFS, DFS
-from algorithms.buscas.buscas_informadas import dijkstra, A_star
+from labirinto.problema import Problem
+from labirinto.buscas_cegas import BFS, DFS
+from labirinto.buscas_informadas import dijkstra, A_star
 
 
 

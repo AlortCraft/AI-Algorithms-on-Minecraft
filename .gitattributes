@@ -1,0 +1,3 @@
+# Mantem os inicializadores compativeis com cada sistema operacional.
+*.sh text eol=lf
+*.bat text eol=crlf

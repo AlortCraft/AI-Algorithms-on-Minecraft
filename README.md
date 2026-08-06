@@ -26,9 +26,9 @@ O mapa selecionado por padrão é o de parkour.
 |   |-- world_parkour_nether/
 |   `-- world_parkour_the_end/
 |-- src/
-|   |-- bot/bot.py
-|   `-- algorithms/buscas/
-|       |-- classes_problemas.py
+|   `-- labirinto/
+|       |-- main.py
+|       |-- problema.py
 |       |-- buscas_cegas.py
 |       `-- buscas_informadas.py
 `-- requirements.txt
@@ -114,6 +114,14 @@ chmod +x INICIAR_SERVIDOR.sh
 ./INICIAR_SERVIDOR.sh
 ```
 
+O script entra automaticamente na pasta `Servidor-BOT`, portanto também pode
+ser chamado diretamente da raiz do repositório:
+
+```bash
+chmod +x Servidor-BOT/INICIAR_SERVIDOR.sh
+./Servidor-BOT/INICIAR_SERVIDOR.sh
+```
+
 No Windows 11, execute no PowerShell do VS Code:
 
 ```powershell
@@ -147,9 +155,31 @@ Configurações importantes que já estão habilitadas:
 - `enable-command-block=true`, para permitir checkpoints do mapa.
 - `level-name=world_parkour`, que seleciona o mapa padrão.
 
+### Primeiro acesso: conceder permissão de administrador
+
+Na primeira vez que cada pessoa entrar no servidor, ela deve ser adicionada
+como administradora pelo terminal do PaperMC. Espere o servidor mostrar `Done`,
+entre no Minecraft e digite no terminal do servidor, sem a barra `/`:
+
+```text
+op NOME_DO_JOGADOR
+```
+
+O mesmo deve ser feito para o bot. Use exatamente o nome definido em
+`username` no código. Com a configuração de exemplo deste projeto:
+
+```text
+op Cleitinho
+```
+
+O jogador e o bot precisam aparecer como operadores para que comandos como
+`/tp` e `/setblock` funcionem. Esse procedimento normalmente é necessário
+somente no primeiro acesso de cada nome; o PaperMC registra os operadores em
+`Servidor-BOT/ops.json`.
+
 ## 5. Configurar a conexão do bot
 
-Abra `src/bot/bot.py` e localize a criação do bot:
+Abra `src/labirinto/main.py` e localize a criação do bot:
 
 ```python
 bot = mineflayer.createBot({
@@ -175,7 +205,7 @@ funcionar nos computadores dos demais integrantes.
 Volte para a raiz do projeto, mantenha o ambiente virtual ativado e execute:
 
 ```bash
-python src/bot/bot.py
+python -m src.labirinto.main
 ```
 
 No Linux ou macOS, use `python3` caso o comando `python` não esteja disponível.
@@ -198,17 +228,18 @@ Com `world_labirinto` selecionado, envie uma destas mensagens no chat:
 
 Os algoritmos pintam de vermelho os blocos explorados e de verde o caminho
 final. Por isso, o usuário do bot precisa ter permissão para executar
-`/setblock` e `/tp`. O arquivo `ops.json` do servidor contém os operadores do
-ambiente original; novos usuários podem precisar receber permissão pelo console:
+`/setblock` e `/tp`. Caso o nome do jogador ou do bot tenha sido alterado,
+conceda novamente a permissão pelo console do servidor:
 
 ```text
 op NOME_DO_JOGADOR
+op NOME_DO_BOT
 ```
 
 ## Estado atual e limitações conhecidas
 
 - BFS, DFS e A* pertencem ao experimento anterior do labirinto.
-- A opção `labirinto DJ` ainda direciona a execução para DFS em `bot.py`; a
+- A opção `labirinto DJ` ainda direciona a execução para DFS em `main.py`; a
   implementação de Dijkstra também precisa ser corrigida antes de ser usada.
 - O código do labirinto assume altura fixa e movimento nos eixos X e Z. Ele não
   controla saltos de parkour.
@@ -230,7 +261,7 @@ op NOME_DO_JOGADOR
 ### O bot não conecta
 
 - Confirme que o PaperMC chegou à mensagem `Done`.
-- Verifique `host` e `port` em `src/bot/bot.py`.
+- Verifique `host` e `port` em `src/labirinto/main.py`.
 - Confira se firewall ou rede privada estão bloqueando a porta `25565`.
 - Se o servidor estiver em outro computador, `localhost` não funcionará.
 
