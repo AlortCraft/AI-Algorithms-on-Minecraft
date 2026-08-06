@@ -37,14 +37,18 @@ O mapa selecionado por padrão é o de parkour.
 ## Requisitos
 
 - Minecraft Java Edition 1.21.11.
-- Java 21 ou mais recente para executar o PaperMC.
+- Java 21 para executar o PaperMC. Versões mais recentes podem funcionar, mas
+  podem exibir avisos de compatibilidade futura.
+- Node.js 22 ou mais recente para executar o Mineflayer.
 - Python 3.11 ou mais recente.
 - Git.
 - Pelo menos 2 GB de memória disponíveis para o servidor.
 
 O pacote Python `javascript` instala e utiliza a ponte necessária para acessar
 os módulos JavaScript `mineflayer` e `vec3`. Na primeira execução, essa etapa
-pode demorar um pouco e pode precisar de acesso à internet.
+pode demorar um pouco e precisa de acesso à internet. Se o Node.js não estiver
+instalado ou for mais antigo que a versão 22, o bot pode falhar mesmo que a
+instalação do Python tenha terminado corretamente.
 
 ## 1. Clonar o projeto
 
@@ -148,6 +152,10 @@ java -Xmx2G -Xms2G -jar paper-1.21.11-132.jar nogui
 Espere a mensagem `Done` aparecer no console. Para encerrar corretamente,
 digite `stop` no console do servidor. Fechar o terminal à força pode corromper
 o mundo.
+
+Na primeira inicialização após uma instalação limpa, mantenha o computador
+conectado à internet: o PaperMC pode precisar baixar o arquivo original do
+Minecraft e gerar suas dependências locais.
 
 Configurações importantes que já estão habilitadas:
 

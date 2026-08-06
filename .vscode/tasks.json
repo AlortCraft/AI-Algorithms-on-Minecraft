@@ -4,9 +4,15 @@
     {
       "label": "Iniciar servidor PaperMC",
       "type": "shell",
-      "command": "${workspaceFolder}\\Servidor-BOT\\INICIAR_SERVIDOR.bat",
+      "command": "./INICIAR_SERVIDOR.sh",
       "options": {
-        "cwd": "${workspaceFolder}\\Servidor-BOT"
+        "cwd": "${workspaceFolder}/Servidor-BOT"
+      },
+      "windows": {
+        "command": ".\\INICIAR_SERVIDOR.bat",
+        "options": {
+          "cwd": "${workspaceFolder}\\Servidor-BOT"
+        }
       },
       "problemMatcher": [],
       "presentation": {

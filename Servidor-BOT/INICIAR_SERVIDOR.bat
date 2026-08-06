@@ -20,7 +20,7 @@ set "SERVER_EXIT=%ERRORLEVEL%"
 if not "%SERVER_EXIT%"=="0" (
     echo.
     echo [ERRO] O servidor terminou com o codigo %SERVER_EXIT%.
-    echo Consulte Servidor-BOT\logs\latest.log para ver os detalhes.
+    echo Consulte logs\latest.log para ver os detalhes.
 )
 
 echo.
