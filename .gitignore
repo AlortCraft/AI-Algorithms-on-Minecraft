@@ -18,11 +18,11 @@ Servidor-BOT/.console_history
 Servidor-BOT/.directory
 Servidor-BOT/usercache.json
 
-# Dados de execucao e jogadores; a estrutura dos mapas continua versionada
+# Travas temporarias: nunca devem ser compartilhadas entre computadores
 Servidor-BOT/world_*/session.lock
-Servidor-BOT/world_*/playerdata/
-Servidor-BOT/world_*/stats/
-Servidor-BOT/world_*/advancements/
+
+# Os demais dados dos mundos sao versionados intencionalmente, inclusive
+# inventarios, posicoes, estatisticas e avancos dos jogadores.
 
 # Modelos, checkpoints e registros de treinamento
 *.pt

@@ -264,6 +264,57 @@ op NOME_DO_BOT
 6. Registre nos experimentos o mapa, algoritmo, recompensa, hiperparâmetros e
    número de episódios utilizados.
 
+## Compartilhando o estado completo do servidor pelo GitHub
+
+O repositório versiona o estado persistente do servidor. Isso inclui blocos,
+construções, command blocks, baús, entidades, inventários, posições, avanços e
+estatísticas dos jogadores. Os arquivos de configuração e os dados persistentes
+de plugins também podem ser compartilhados.
+
+O `.gitignore` mantém fora do Git somente dependências e arquivos técnicos que
+são regenerados, como logs, caches, bibliotecas do PaperMC, arquivos remapeados
+de plugins e `session.lock`. O `session.lock` nunca deve ser compartilhado, pois
+é uma trava local usada enquanto um mundo está aberto.
+
+Os arquivos `.mca`, `level.dat` e `playerdata/*.dat` são binários. O Git não
+consegue combinar duas versões deles. Para evitar perda de construções ou de
+inventários, apenas uma pessoa pode executar ou editar o servidor compartilhado
+por vez.
+
+Use este fluxo sempre que alguém for jogar, construir ou alterar configurações:
+
+1. Confirme com o grupo que ninguém está usando o servidor.
+2. Mantenha o PaperMC fechado e receba a versão mais recente:
+
+   ```bash
+   git pull
+   ```
+
+3. Inicie o servidor, faça as alterações e encerre pelo terminal com `stop`.
+4. Espere o processo Java terminar completamente.
+5. Prepare as modificações persistentes. Os arquivos temporários serão excluídos
+   automaticamente pelo `.gitignore`:
+
+   ```bash
+   git add .
+   git status
+   ```
+
+6. Revise a lista, crie o commit e envie imediatamente ao GitHub:
+
+   ```bash
+   git commit -m "Atualiza estado do servidor"
+   git push
+   ```
+
+7. Avise o grupo de que o servidor foi liberado. A próxima pessoa deve repetir o
+   processo começando por `git pull`.
+
+Nunca execute `git pull`, troque de branch ou resolva conflitos com o PaperMC
+aberto. Se duas pessoas iniciarem cópias do servidor a partir do mesmo commit e
+ambas fizerem alterações, será necessário escolher uma das versões binárias;
+não existe mesclagem segura que preserve automaticamente as duas.
+
 ## Solução de problemas
 
 ### O bot não conecta

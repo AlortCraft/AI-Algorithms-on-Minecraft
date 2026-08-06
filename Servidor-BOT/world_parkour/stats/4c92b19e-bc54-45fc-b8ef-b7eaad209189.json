@@ -1,0 +1,52 @@
+{
+  "stats": {
+    "minecraft:dropped": {
+      "minecraft:waxed_copper_lantern": 1,
+      "minecraft:stone": 1,
+      "minecraft:light_weighted_pressure_plate": 1,
+      "minecraft:sand": 1,
+      "minecraft:command_block": 1,
+      "minecraft:sandstone": 1,
+      "minecraft:pale_oak_slab": 1,
+      "minecraft:pale_oak_trapdoor": 1,
+      "minecraft:bamboo_fence": 1,
+      "minecraft:repeating_command_block": 4
+    },
+    "minecraft:used": {
+      "minecraft:stone": 2,
+      "minecraft:sand": 2,
+      "minecraft:repeating_command_block": 2,
+      "minecraft:pale_oak_slab": 1,
+      "minecraft:waxed_copper_lantern": 1,
+      "minecraft:light_weighted_pressure_plate": 1,
+      "minecraft:bamboo_fence": 5,
+      "minecraft:command_block": 3,
+      "minecraft:pale_oak_trapdoor": 1
+    },
+    "minecraft:custom": {
+      "minecraft:damage_resisted": 2780,
+      "minecraft:time_since_rest": 11349,
+      "minecraft:walk_one_cm": 112522,
+      "minecraft:leave_game": 4,
+      "minecraft:damage_taken": 4160,
+      "minecraft:play_time": 135078,
+      "minecraft:open_shulker_box": 18,
+      "minecraft:jump": 1107,
+      "minecraft:time_since_death": 11349,
+      "minecraft:drop": 13,
+      "minecraft:sprint_one_cm": 96584,
+      "minecraft:fall_one_cm": 87828,
+      "minecraft:total_world_time": 135144,
+      "minecraft:fly_one_cm": 1192104,
+      "minecraft:crouch_one_cm": 22200,
+      "minecraft:sneak_time": 8406,
+      "minecraft:climb_one_cm": 17623,
+      "minecraft:deaths": 22
+    },
+    "minecraft:picked_up": {
+      "minecraft:light_weighted_pressure_plate": 1,
+      "minecraft:repeating_command_block": 1
+    }
+  },
+  "DataVersion": 4671
+}
