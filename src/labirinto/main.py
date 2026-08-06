@@ -26,7 +26,7 @@ vec3 = require('vec3')
 bot = mineflayer.createBot({
     'host': '100.110.191.127',       
     'port': 25565,
-    'username': 'Cleitinho',  
+    'username': 'LucidioBot',  
     'hideErrors': False        
 })
 
