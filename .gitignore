@@ -3,6 +3,36 @@
 .venv/
 __pycache__/
 *.pyc
+tmp/
 
 # Backups locais dos mundos e do servidor
 Servidor-BOT/backups/
+
+# Arquivos temporarios e dependencias geradas pelo PaperMC
+Servidor-BOT/cache/
+Servidor-BOT/libraries/
+Servidor-BOT/logs/
+Servidor-BOT/versions/
+Servidor-BOT/plugins/.paper-remapped/
+Servidor-BOT/.console_history
+Servidor-BOT/.directory
+Servidor-BOT/usercache.json
+
+# Dados de execucao e jogadores; a estrutura dos mapas continua versionada
+Servidor-BOT/world_*/session.lock
+Servidor-BOT/world_*/playerdata/
+Servidor-BOT/world_*/stats/
+Servidor-BOT/world_*/advancements/
+
+# Modelos, checkpoints e registros de treinamento
+*.pt
+*.pth
+*.ckpt
+events.out.tfevents.*
+resultados/modelos/
+resultados/metricas/
+resultados/graficos/
+
+# Configuracoes locais e segredos
+.env
+config/bot.json
