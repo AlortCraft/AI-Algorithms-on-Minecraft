@@ -1,0 +1,22 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Iniciar servidor PaperMC",
+      "type": "shell",
+      "command": "${workspaceFolder}\\Servidor-BOT\\INICIAR_SERVIDOR.bat",
+      "options": {
+        "cwd": "${workspaceFolder}\\Servidor-BOT"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "showReuseMessage": true,
+        "clear": false
+      }
+    }
+  ]
+}
