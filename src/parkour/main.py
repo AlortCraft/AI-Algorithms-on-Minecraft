@@ -31,12 +31,11 @@ Comandos no chat:
     parkour parar        interrompe o que estiver rodando
 """
 
+import argparse
 import json
 import os
 import threading
 import traceback
-
-from javascript import On, require
 
 from . import acoes as catalogo_acoes
 from . import calibracao
@@ -48,17 +47,22 @@ from .percurso import Percurso
 
 
 class BotParkour:
-    def __init__(self):
-        self.configuracao = configuracao_modulo.carregar()
+    def __init__(self, cenario=None, nome_trecho=None):
+        self.configuracao = configuracao_modulo.carregar(cenario=cenario)
         self.dados_bot = configuracao_modulo.carregar_bot()
+        configuracao_modulo.validar_mundo_local(self.configuracao, self.dados_bot)
 
-        definicao = configuracao_modulo.trecho(self.configuracao)
+        definicao = configuracao_modulo.trecho(self.configuracao, nome_trecho)
         self.percurso = Percurso.carregar(
-            configuracao_modulo.caminho_absoluto(self.configuracao['mapa']), definicao)
+            configuracao_modulo.caminho_mapa(self.configuracao, definicao), definicao)
 
         print("Inicializando o bot de parkour...")
+        print(f"  cenario: {self.configuracao.get('cenario', 'padrao')}")
         print(f"  {self.percurso.resumo()}")
 
+        # A ponte so e necessaria para conectar. Importa-la aqui permite usar
+        # --listar-cenarios e outras operacoes offline sem instalar Mineflayer.
+        from javascript import require
         self.mineflayer = require('mineflayer')
         self.vec3 = require('vec3')
         self.bot = self.mineflayer.createBot({
@@ -113,35 +117,59 @@ class BotParkour:
     # comandos
 
     def comando_ajuda(self):
-        for linha in ("parkour info / teste / reset / marcar",
+        for linha in ("parkour info / teste / reset / marcar / verificar",
                       "parkour calibrar | guloso | rodar | parar"):
             self.falar(linha)
 
     def comando_info(self):
         ambiente = self.preparar_ambiente()
         corpo = ambiente.corpo
+        mundo_x, mundo_y, mundo_z = corpo.posicao_mundo
         self.falar(f"{self.percurso.resumo()}")
-        self.falar(f"bot em x={corpo.x:.2f} y={corpo.y:.2f} z={corpo.z:.2f} "
+        self.falar(f"mundo x={mundo_x:.2f} y={mundo_y:.2f} z={mundo_z:.2f}")
+        self.falar(f"local lateral={corpo.x:.2f} altura={corpo.y:.2f} "
+                   f"progresso={corpo.z:.2f} "
                    f"no_chao={corpo.no_chao}")
         self.falar(f"estado={ambiente.observar()} de {ambiente.quantidade_estados}")
 
     def comando_teste(self):
         """Anda cinco blocos. E o primeiro teste de que a ponte funciona."""
         ambiente = self.preparar_ambiente()
-        z_inicial = ambiente.corpo.z
+        progresso_inicial = ambiente.corpo.z
         self.falar("andando cinco blocos...")
         ambiente.aplicar(catalogo_acoes.entradas_de(0))
         for _ in range(100):
-            if ambiente.corpo.z - z_inicial >= 5.0 or self.parar_pedido.is_set():
+            if (ambiente.corpo.z - progresso_inicial >= 5.0
+                    or self.parar_pedido.is_set()):
                 break
             ambiente.esperar_ticks(2)
         ambiente.soltar_controles()
-        self.falar(f"andou {ambiente.corpo.z - z_inicial:.2f} blocos")
+        self.falar(f"avancou {ambiente.corpo.z - progresso_inicial:.2f} blocos")
 
     def comando_reset(self):
         ambiente = self.preparar_ambiente()
         ambiente.reset()
-        self.falar(f"no inicio: x={ambiente.corpo.x:.2f} z={ambiente.corpo.z:.2f}")
+        mundo_x, _, mundo_z = ambiente.corpo.posicao_mundo
+        self.falar(f"no inicio: mundo x={mundo_x:.2f} z={mundo_z:.2f}; "
+                   f"progresso={ambiente.corpo.z:.2f}")
+
+    def comando_verificar(self):
+        """Confere se o JSON selecionado descreve os blocos do mundo aberto."""
+        ambiente = self.preparar_ambiente()
+        ambiente.reset()
+        resultado = ambiente.verificar_geometria()
+        if resultado['aviso']:
+            self.falar(f"nao foi possivel verificar: {resultado['aviso']}")
+            return
+        diferencas = resultado['diferencas']
+        if not diferencas:
+            self.falar(f"mapa conferido: {resultado['verificados']} blocos coincidem")
+            return
+        self.falar(f"ERRO DE MAPA: {len(diferencas)} de "
+                   f"{resultado['verificados']} amostras diferem")
+        for diferenca in diferencas[:3]:
+            self.falar(f"em {diferenca['mundo']}: esperado "
+                       f"{diferenca['esperado']}, obtido {diferenca['obtido']}")
 
     def comando_marcar(self, nome_jogador):
         """Grava a posicao do jogador, para reconfigurar o trecho sem o F3."""
@@ -173,8 +201,12 @@ class BotParkour:
         parou no pilar de z=1004 no tick 24 e os 128 ticks seguintes nao
         mediram nada. Ver docs/sim_para_real.md.
         """
+        calibracao_config = self.configuracao.get('calibracao', {})
+        if not calibracao_config.get('disponivel', True):
+            self.falar("este cenario nao possui pista de calibracao")
+            return
         ambiente = self.preparar_ambiente()
-        pista = self.configuracao['calibracao']['pista']
+        pista = calibracao_config['pista']
         origem = ((pista['x_min'] + pista['x_max'] + 1) / 2.0,
                   float(pista['y_piso'] + 1),
                   pista['z_inicio'] + 0.5)
@@ -225,11 +257,16 @@ class BotParkour:
         do simulador, e e um resultado do trabalho.
         """
         ambiente = self.preparar_ambiente()
+        rotulo = configuracao_modulo.rotulo_modelo(
+            self.configuracao, self.percurso.nome)
         modelo = os.path.join(configuracao_modulo.RAIZ, 'resultados', 'modelos',
-                              f"q_{self.percurso.nome}_s0.json")
+                              f"q_{rotulo}_s0.json")
         if not os.path.exists(modelo):
             self.falar("nao achei a tabela treinada. Rode antes, fora do jogo:")
-            self.falar("python -m src.parkour.experimento --agente q --episodios 4000")
+            cenario = self.configuracao.get('cenario')
+            sufixo = f" --cenario {cenario}" if cenario else ''
+            self.falar("python -m src.parkour.experimento --agente q "
+                       f"--episodios 4000{sufixo}")
             return
 
         agente = AgenteQLearning(ambiente.quantidade_estados,
@@ -246,21 +283,47 @@ class BotParkour:
 
 
 def main():
-    parkour = BotParkour()
+    analisador = argparse.ArgumentParser(description=__doc__)
+    analisador.add_argument('--cenario', default=None,
+                            help='parkour_oficial ou labirinto_parkours')
+    analisador.add_argument('--trecho', default=None)
+    analisador.add_argument('--listar-cenarios', action='store_true')
+    argumentos = analisador.parse_args()
+
+    if argumentos.listar_cenarios:
+        print('\n'.join(configuracao_modulo.cenarios_disponiveis()))
+        return
+
+    cenario = argumentos.cenario
+    if cenario is None:
+        cenario = configuracao_modulo.cenario_para_mundo(
+            configuracao_modulo.mundo_servidor_local())
+        if cenario:
+            print(f"Cenario escolhido pelo level-name do servidor: {cenario}")
+        else:
+            cenario = 'parkour_oficial'
+
+    from javascript import On
+    parkour = BotParkour(cenario, argumentos.trecho)
     bot = parkour.bot
 
-    # O decorador @On do JSPyBridge entrega o `this` do JavaScript como
-    # primeiro argumento, igual a um metodo. Sem ele, o handler estoura com
-    # "takes 0 positional arguments but 1 was given" no primeiro evento e o
-    # bot cai fora do servidor antes de responder qualquer coisa.
+    # Versoes do JSPyBridge divergem sobre entregar ou nao o `this` do
+    # JavaScript como primeiro argumento. ``*argumentos`` torna o evento de
+    # spawn compativel com os dois formatos: ele nao precisa dos argumentos.
     @On(bot, 'spawn')
-    def ao_nascer(este):
+    def ao_nascer(*argumentos):
         print(f"[{bot.username}] conectado")
         bot.chat("bot de parkour pronto. Digite: parkour ajuda")
 
     @On(bot, 'messagestr')
-    def ao_ouvir(este, mensagem, posicao=None, json_mensagem=None,
-                 remetente=None, verificacao=None):
+    def ao_ouvir(*argumentos):
+        if not argumentos:
+            return
+        # No formato atual, a mensagem e o primeiro argumento. Em versoes que
+        # inserem `this`, ela e o segundo. O evento messagestr entrega a
+        # mensagem como str, enquanto `this` e um proxy JavaScript.
+        mensagem = next((item for item in argumentos[:2]
+                         if isinstance(item, str)), argumentos[0])
         texto = str(mensagem).strip().lower()
         if 'parkour' not in texto:
             return
@@ -288,6 +351,8 @@ def main():
             parkour.em_segundo_plano(parkour.comando_reset)
         elif 'marcar' in texto:
             parkour.em_segundo_plano(parkour.comando_marcar, jogador)
+        elif 'verificar' in texto:
+            parkour.em_segundo_plano(parkour.comando_verificar)
         elif 'calibrar' in texto:
             parkour.em_segundo_plano(parkour.comando_calibrar)
         elif 'guloso' in texto:

@@ -43,15 +43,15 @@ def _rodar_uma(tarefa):
     Recebe e devolve so tipos simples, porque tudo precisa atravessar o pickle
     entre os processos.
     """
-    (nome_trecho, semente, ajustes, episodios, episodios_avaliacao) = tarefa
+    (cenario, nome_trecho, semente, ajustes, episodios, episodios_avaliacao) = tarefa
 
-    configuracao = configuracao_modulo.carregar()
+    configuracao = configuracao_modulo.carregar(cenario=cenario)
     parametros = dict(configuracao.get('q_learning', {}))
     parametros.update(ajustes)
 
     definicao = configuracao_modulo.trecho(configuracao, nome_trecho)
     percurso = Percurso.carregar(
-        configuracao_modulo.caminho_absoluto(configuracao['mapa']), definicao)
+        configuracao_modulo.caminho_mapa(configuracao, definicao), definicao)
 
     ambiente = AmbienteParkour(percurso, configuracao, semente=semente)
     agente = AgenteQLearning(ambiente.quantidade_estados,
@@ -92,6 +92,7 @@ def main():
     analisador = argparse.ArgumentParser(description=__doc__,
                                          formatter_class=argparse.RawDescriptionHelpFormatter)
     analisador.add_argument('--trecho', default=None)
+    analisador.add_argument('--cenario', default=None)
     analisador.add_argument('--sementes', type=int, nargs='*', default=[0, 1, 2])
     analisador.add_argument('--episodios', type=int, default=4000)
     analisador.add_argument('--avaliacao', type=int, default=100)
@@ -102,7 +103,7 @@ def main():
     analisador.add_argument('--processos', type=int, default=None)
     argumentos = analisador.parse_args()
 
-    configuracao = configuracao_modulo.carregar()
+    configuracao = configuracao_modulo.carregar(cenario=argumentos.cenario)
     padroes = configuracao.get('q_learning', {})
     taxas = argumentos.taxas or [padroes.get('taxa_aprendizado', 0.2)]
     descontos = argumentos.descontos or [padroes.get('desconto', 0.97)]
@@ -113,7 +114,7 @@ def main():
         ajustes = {'taxa_aprendizado': taxa, 'desconto': desconto,
                    'exploracao_decaimento': decaimento}
         for semente in argumentos.sementes:
-            tarefas.append((argumentos.trecho, semente, ajustes,
+            tarefas.append((argumentos.cenario, argumentos.trecho, semente, ajustes,
                             argumentos.episodios, argumentos.avaliacao))
 
     combinacoes = len(taxas) * len(descontos) * len(decaimentos)

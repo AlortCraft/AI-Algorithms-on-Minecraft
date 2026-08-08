@@ -80,7 +80,7 @@ class AmbienteMinecraft:
         self.passos_parado = 0
         self.z_maximo = percurso.z_inicio
         self.motivo = None
-        self.corpo = _CorpoDoBot(bot)
+        self.corpo = _CorpoDoBot(bot, percurso.transformacao)
 
     # ------------------------------------------------------------------
 
@@ -127,12 +127,13 @@ class AmbienteMinecraft:
         reset confiavel, comparar dois agentes nao mede nada.
         """
         self.soltar_controles()
-        destino_x = self.percurso.x_partida
-        destino_z = self.percurso.z_inicio + 0.5
-        # Yaw 0 e pitch 0 deixam o bot olhando para +z, que e a convencao que
-        # a fisica simulada assume.
+        destino_local = (self.percurso.x_partida, self.percurso.y_pe,
+                         self.percurso.z_inicio + 0.5)
+        destino_x, destino_y, destino_z = self.percurso.transformacao.para_mundo(
+            *destino_local)
+        yaw = self.percurso.transformacao.yaw
         self.bot.chat(f"/tp {self.bot.username} {destino_x:.3f} "
-                      f"{self.percurso.y_pe} {destino_z:.3f} 0 0")
+                      f"{destino_y:.3f} {destino_z:.3f} {yaw:.1f} 0")
         self.esperar_ticks(10)
 
         self.passos = 0
@@ -143,15 +144,15 @@ class AmbienteMinecraft:
 
     def passo(self, acao):
         entradas = catalogo_acoes.entradas_de(acao)
-        z_antes = self.corpo.z
+        progresso_antes = self.corpo.z
 
         self.aplicar(entradas)
         self.esperar_ticks(self.ticks_por_acao)
         self.soltar_controles()
 
         self.passos += 1
-        z_depois = self.corpo.z
-        self.z_maximo = max(self.z_maximo, z_depois)
+        progresso_depois = self.corpo.z
+        self.z_maximo = max(self.z_maximo, progresso_depois)
 
         # Deteccao de travamento. Prensado contra um obstaculo, o bot para de
         # responder ao pulo: medido em jogo em 08/08/2026, no pilar de z=1004,
@@ -159,7 +160,7 @@ class AmbienteMinecraft:
         # funcionar assim que e teleportado para fora. Sem isto o episodio
         # gasta os 120 passos parado no mesmo lugar, e a metrica registra
         # "tempo" como se fosse indecisao do agente, e nao um beco.
-        if abs(z_depois - z_antes) < self.PARADO_EPSILON:
+        if abs(progresso_depois - progresso_antes) < self.PARADO_EPSILON:
             self.passos_parado += 1
         else:
             self.passos_parado = 0
@@ -168,7 +169,7 @@ class AmbienteMinecraft:
         if self.corpo.y < self.percurso.y_pe - self.queda_abaixo_de:
             self.motivo = 'queda'
             terminou = True
-        elif z_depois >= self.percurso.z_meta:
+        elif progresso_depois >= self.percurso.z_meta:
             self.motivo = 'meta'
             terminou = True
         elif self.passos_parado >= self.PASSOS_PARADO_MAXIMO:
@@ -179,7 +180,7 @@ class AmbienteMinecraft:
         if truncou:
             self.motivo = 'tempo'
 
-        valor = self.recompensa.calcular(z_antes, self.corpo.z,
+        valor = self.recompensa.calcular(progresso_antes, self.corpo.z,
                                          self.motivo if terminou else None)
         return self.observar(), valor, terminou, truncou, self.informacoes()
 
@@ -192,10 +193,14 @@ class AmbienteMinecraft:
         return self.discretizador.vetor(self.corpo)
 
     def informacoes(self):
+        mundo_x, mundo_y, mundo_z = self.corpo.posicao_mundo
         return {
             'x': self.corpo.x,
             'y': self.corpo.y,
             'z': self.corpo.z,
+            'mundo_x': mundo_x,
+            'mundo_y': mundo_y,
+            'mundo_z': mundo_z,
             'z_maximo': self.z_maximo,
             'passos': self.passos,
             'motivo': self.motivo,
@@ -203,6 +208,46 @@ class AmbienteMinecraft:
                           / max(1e-9, self.percurso.comprimento())),
             'chegou': self.motivo == 'meta',
         }
+
+    def verificar_geometria(self, limite=16):
+        """Compara uma amostra do JSON com os blocos carregados no Mineflayer.
+
+        O treino continua usando o JSON local por velocidade. Esta verificacao
+        roda uma vez, no jogo, para detectar o erro perigoso: selecionar um
+        mundo e observar a geometria exportada de outro.
+        """
+        if self.vec3 is None or not self.percurso.nomes_blocos:
+            return {
+                'verificados': 0,
+                'diferencas': [],
+                'aviso': 'o mapa antigo nao guarda nomes de blocos para comparar',
+            }
+
+        posicoes = sorted(
+            (posicao, nome) for posicao, nome in self.percurso.nomes_blocos.items()
+            if self.percurso.z_inicio <= posicao[2] <= self.percurso.z_meta
+            and self.percurso.x_min <= posicao[0] < self.percurso.x_max)
+        if len(posicoes) > limite:
+            # Espalha as amostras pelo percurso em vez de olhar so a largada.
+            indices = [round(i * (len(posicoes) - 1) / (limite - 1))
+                       for i in range(limite)]
+            posicoes = [posicoes[indice] for indice in indices]
+
+        diferencas = []
+        for (local_x, y, local_z), esperado in posicoes:
+            mundo_x, mundo_z = self.percurso.transformacao.celula_para_mundo(
+                local_x, local_z)
+            bloco = self.bot.blockAt(self.vec3(mundo_x, y, mundo_z))
+            obtido = str(bloco.name) if bloco is not None else '(nao carregado)'
+            if obtido != esperado:
+                diferencas.append({
+                    'local': (local_x, y, local_z),
+                    'mundo': (mundo_x, y, mundo_z),
+                    'esperado': esperado,
+                    'obtido': obtido,
+                })
+        return {'verificados': len(posicoes), 'diferencas': diferencas,
+                'aviso': None}
 
     # ------------------------------------------------------------------
 
@@ -261,7 +306,7 @@ class AmbienteMinecraft:
 
 
 class _CorpoDoBot:
-    """Le a posicao do bot com a mesma cara do Corpo do simulador.
+    """Le o bot real e o apresenta nas coordenadas locais do simulador.
 
     Cada atributo lido aqui atravessa a ponte JSPyBridge, que custa uma
     ida-e-volta entre processos. Por isso o codigo do ambiente le a posicao o
@@ -269,38 +314,54 @@ class _CorpoDoBot:
     chamadas bot.blockAt().
     """
 
-    __slots__ = ('bot',)
+    __slots__ = ('bot', 'transformacao')
 
-    def __init__(self, bot):
+    def __init__(self, bot, transformacao):
         self.bot = bot
+        self.transformacao = transformacao
 
     @property
     def _posicao(self):
         return self.bot.entity.position
 
     @property
+    def posicao_mundo(self):
+        posicao = self._posicao
+        return float(posicao.x), float(posicao.y), float(posicao.z)
+
+    @property
+    def _local(self):
+        return self.transformacao.para_local(*self.posicao_mundo)
+
+    @property
     def x(self):
-        return float(self._posicao.x)
+        return self._local[0]
 
     @property
     def y(self):
-        return float(self._posicao.y)
+        return self._local[1]
 
     @property
     def z(self):
-        return float(self._posicao.z)
+        return self._local[2]
+
+    @property
+    def _velocidade_local(self):
+        velocidade = self.bot.entity.velocity
+        return self.transformacao.velocidade_local(
+            velocidade.x, velocidade.y, velocidade.z)
 
     @property
     def vx(self):
-        return float(self.bot.entity.velocity.x)
+        return self._velocidade_local[0]
 
     @property
     def vy(self):
-        return float(self.bot.entity.velocity.y)
+        return self._velocidade_local[1]
 
     @property
     def vz(self):
-        return float(self.bot.entity.velocity.z)
+        return self._velocidade_local[2]
 
     @property
     def no_chao(self):

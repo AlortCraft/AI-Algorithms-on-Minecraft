@@ -100,7 +100,9 @@ class AmbienteParkour:
 
     def passo(self, acao):
         entradas = catalogo_acoes.entradas_de(acao)
-        z_antes = self.corpo.z
+        # ``corpo.z`` e o progresso local. No mapa oficial coincide com Z do
+        # mundo; num percurso em X ele ja chega transformado.
+        progresso_antes = self.corpo.z
 
         for _ in range(self.ticks_por_acao):
             fisica.passo_tick(self.percurso, self.constantes, self.corpo, entradas)
@@ -122,7 +124,7 @@ class AmbienteParkour:
         if truncou:
             self.motivo = 'tempo'
 
-        valor = self.recompensa.calcular(z_antes, self.corpo.z,
+        valor = self.recompensa.calcular(progresso_antes, self.corpo.z,
                                          self.motivo if terminou else None)
 
         return self.observar(), valor, terminou, truncou, self.informacoes()

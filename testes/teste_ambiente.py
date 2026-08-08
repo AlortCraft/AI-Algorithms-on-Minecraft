@@ -15,6 +15,7 @@ from src.parkour import acoes, config as configuracao_modulo
 from src.parkour.agentes.aleatorio import AgenteAleatorio
 from src.parkour.agentes.guloso import AgenteGuloso
 from src.parkour.ambiente_sim import AmbienteParkour
+from src.parkour.coordenadas import TransformacaoPercurso
 from src.parkour.percurso import Percurso
 from testes.apoio import Verificador
 
@@ -269,6 +270,55 @@ def teste_catalogo_de_acoes(verificador):
                            f"{len(acoes.CATALOGO)} acoes no catalogo")
     verificador.verdadeiro(len(set(acoes.NOMES)) == len(acoes.NOMES),
                            "nenhum nome de acao repetido")
+
+
+def teste_cenarios_e_direcoes(verificador):
+    """O mesmo ambiente deve aceitar corredores em qualquer eixo cardinal."""
+    inicio = {'x': 10, 'y': 70, 'z': 20}
+    casos = (
+        ({'x': 15, 'y': 70, 'z': 20}, '+X', -90.0),
+        ({'x': 5, 'y': 70, 'z': 20}, '-X', 90.0),
+        ({'x': 10, 'y': 70, 'z': 25}, '+Z', 0.0),
+        ({'x': 10, 'y': 70, 'z': 15}, '-Z', 180.0),
+    )
+    for fim, direcao, yaw in casos:
+        transformacao = TransformacaoPercurso(inicio, fim)
+        local_inicio = transformacao.para_local(10.5, 70, 20.5)
+        mundo_inicio = transformacao.para_mundo(*local_inicio)
+        local_fim = transformacao.para_local(fim['x'] + 0.5, 70,
+                                             fim['z'] + 0.5)
+        verificador.perto(local_inicio[2], 0.5, 1e-9,
+                          f'{direcao}: inicio vira progresso 0.5')
+        verificador.perto(local_fim[2], 5.5, 1e-9,
+                          f'{direcao}: fim fica cinco blocos adiante')
+        verificador.verdadeiro(mundo_inicio == (10.5, 70.0, 20.5),
+                               f'{direcao}: conversao de ida e volta preserva posicao')
+        verificador.perto(transformacao.yaw, yaw, 1e-9,
+                          f'{direcao}: yaw aponta para a meta')
+
+    menos_x = TransformacaoPercurso(inicio, {'x': 5, 'y': 70, 'z': 20})
+    verificador.verdadeiro(menos_x.celula_para_local(7, 20) == (20, 3),
+                           '-X: bloco real vira celula local correta')
+    verificador.verdadeiro(menos_x.celula_para_mundo(20, 3) == (7, 20),
+                           '-X: celula local volta ao bloco real correto')
+
+    configuracao = configuracao_modulo.carregar(cenario='labirinto_parkours')
+    definicao = configuracao_modulo.trecho(configuracao, 'frente_1')
+    percurso = Percurso.carregar(
+        configuracao_modulo.caminho_mapa(configuracao, definicao), definicao)
+    ambiente = AmbienteParkour(percurso, configuracao, semente=0, randomizar=False)
+    ambiente.reset()
+    while True:
+        _, _, terminou, truncou, informacoes = ambiente.passo(2)  # correr + pular
+        if terminou or truncou:
+            break
+
+    verificador.verdadeiro(percurso.mundo == 'world_labirinto',
+                           'cenario do labirinto usa o mundo correto')
+    verificador.verdadeiro(percurso.transformacao.nome_direcao == '-X',
+                           'frente_1 transforma -X em progresso positivo')
+    verificador.verdadeiro(informacoes['chegou'],
+                           'correr e pular para frente conclui o treino simples')
 
 
 def main():

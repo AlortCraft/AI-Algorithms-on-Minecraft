@@ -11,13 +11,13 @@
     "          rode 'op <usuario>' no console do PaperMC: sem isso o /tp do",
     "          reset nao funciona e nenhum episodio comeca.",
     "",
-    "Atencao: ops.json hoje tem TrainedDrop e Cleitinho, mas o codigo antigo",
-    "usava LucidioBot. Escolha um nome e de op nele."
+    "O nome padrao do bot de parkour do grupo e LucidioBot. No servidor,",
+    "rode 'op LucidioBot' para permitir o /tp usado no reset."
   ],
 
   "host": "localhost",
   "porta": 25565,
-  "usuario": "Cleitinho",
+  "usuario": "LucidioBot",
   "jogador": "TrainedDrop",
   "esconder_erros": false
 }

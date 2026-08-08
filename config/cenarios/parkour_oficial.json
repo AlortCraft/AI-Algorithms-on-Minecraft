@@ -1,0 +1,9 @@
+{
+  "_comentario": [
+    "Cenario do mapa grande original. Os trechos e o mapa continuam vindo",
+    "de config/parkour.json; este arquivo declara qual mundo o servidor deve",
+    "estar usando e da um nome explicito a escolha."
+  ],
+  "mundo": "world_parkour",
+  "mapa": "config/mapas/world_parkour.json"
+}

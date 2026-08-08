@@ -121,6 +121,7 @@ def mapear(pasta_mundo, centro_x, z_min, z_max, y_min, y_max, margem_x):
 
     solidos = collections.defaultdict(list)
     avisos = collections.Counter()
+    nomes = {}
     for (x, y, z), nome in sorted(caixa.items(), key=lambda item: (item[0][2], item[0][0], item[0][1])):
         # O aviso vem antes do filtro: blocos sem colisao tambem podem estar
         # mal classificados, e a escada e o exemplo obvio disso.
@@ -130,6 +131,7 @@ def mapear(pasta_mundo, centro_x, z_min, z_max, y_min, y_max, margem_x):
         if altura <= 0.0:
             continue
         solidos[str(z)].append([x, y, round(altura, 4), round(largura, 4)])
+        nomes[f'{x},{y},{z}'] = nome.split(':')[-1]
 
     # O fim do percurso e o ultimo z que ainda tem construcao.
     z_construido = [int(z) for z in solidos]
@@ -151,6 +153,7 @@ def mapear(pasta_mundo, centro_x, z_min, z_max, y_min, y_max, margem_x):
         'y_pe': y_pe,
         'estagios': estagios,
         'blocos_a_validar': dict(avisos),
+        'nomes': nomes,
         'solidos': dict(solidos),
     }
 
@@ -297,6 +300,8 @@ def _trechos_fora_do_alcance(z_min, z_max):
         return []       # sem config legivel nao ha o que verificar
     faltantes = []
     for nome, definicao in sorted(trechos.items()):
+        if not isinstance(definicao, dict) or nome.startswith('_'):
+            continue
         z_inicio, z_meta = definicao.get('z_inicio'), definicao.get('z_meta')
         if z_inicio is None or z_meta is None:
             continue

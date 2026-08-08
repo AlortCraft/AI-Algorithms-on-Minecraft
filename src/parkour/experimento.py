@@ -159,6 +159,8 @@ def main():
                                          formatter_class=argparse.RawDescriptionHelpFormatter)
     analisador.add_argument('--agente', default='aleatorio',
                             help='aleatorio, guloso, q ou dqn')
+    analisador.add_argument('--cenario', default=None,
+                            help='parkour_oficial ou labirinto_parkours')
     analisador.add_argument('--trecho', default=None, help='trecho de treino')
     analisador.add_argument('--avaliar-em', nargs='*', default=None,
                             help='trechos onde avaliar sem retreinar (generalizacao)')
@@ -175,9 +177,9 @@ def main():
     analisador.add_argument('--comprimento-gerado', type=int, default=18)
     argumentos = analisador.parse_args()
 
-    configuracao = configuracao_modulo.carregar()
-    caminho_mapa = configuracao_modulo.caminho_absoluto(configuracao['mapa'])
+    configuracao = configuracao_modulo.carregar(cenario=argumentos.cenario)
     definicao = configuracao_modulo.trecho(configuracao, argumentos.trecho)
+    caminho_mapa = configuracao_modulo.caminho_mapa(configuracao, definicao)
 
     sementes = argumentos.sementes or configuracao.get('sementes', [0])
     episodios_avaliacao = (argumentos.avaliacao
@@ -191,6 +193,7 @@ def main():
 
     percurso_treino = Percurso.carregar(caminho_mapa, definicao)
     nome_treino = definicao['nome']
+    rotulo_treino = configuracao_modulo.rotulo_modelo(configuracao, nome_treino)
 
     percursos_treino = [percurso_treino]
     percursos_avaliacao = [percurso_treino]
@@ -221,11 +224,13 @@ def main():
                 percursos_avaliacao.append(percurso)
 
         nome_treino = f'gerados_{len(percursos_treino)}'
+        rotulo_treino = configuracao_modulo.rotulo_modelo(configuracao, nome_treino)
         print(f"treinando em {len(percursos_treino)} corredores gerados "
               f"(dos {argumentos.gerados} sorteados, os que tem solucao)")
         print(f"avaliando em {len(percursos_avaliacao)} corredores novos, "
               f"nunca vistos no treino")
 
+    print(f"cenario={configuracao.get('cenario', 'padrao')}")
     print(percurso_treino.resumo())
     print(f"agente={argumentos.agente}  sementes={sementes}  "
           f"treino={episodios_treino}  avaliacao={episodios_avaliacao}")
@@ -257,8 +262,10 @@ def main():
                    False, argumentos.agente, rotulo_avaliacao, semente, registros)
 
         for nome_trecho in (argumentos.avaliar_em or []):
+            outra_definicao = configuracao_modulo.trecho(configuracao, nome_trecho)
             outro = Percurso.carregar(
-                caminho_mapa, configuracao_modulo.trecho(configuracao, nome_trecho))
+                configuracao_modulo.caminho_mapa(configuracao, outra_definicao),
+                outra_definicao)
             ambiente_outro = AmbienteParkour(outro, configuracao,
                                              semente=2000 + semente, randomizar=False)
             rodar_fase(ambiente_outro, agente, episodios_avaliacao,
@@ -268,13 +275,13 @@ def main():
         if hasattr(agente, 'salvar') and argumentos.agente in ('q', 'q_learning', 'dqn'):
             modelo = os.path.join(
                 configuracao_modulo.RAIZ, 'resultados', 'modelos',
-                f"{argumentos.agente}_{nome_treino}_s{semente}.json")
+                f"{argumentos.agente}_{rotulo_treino}_s{semente}.json")
             agente.salvar(modelo)
 
     carimbo = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
     nome_arquivo = argumentos.saida or os.path.join(
         configuracao_modulo.RAIZ, 'resultados', 'metricas',
-        f"{argumentos.agente}_{nome_treino}_{carimbo}.csv")
+        f"{argumentos.agente}_{rotulo_treino}_{carimbo}.csv")
     gravar_csv(registros, nome_arquivo)
 
     print("\n  resultados (media das sementes):")

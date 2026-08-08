@@ -16,11 +16,15 @@ import json
 import math
 
 from . import geometria
+from .coordenadas import TransformacaoPercurso
 
 
 class Percurso:
-    def __init__(self, mapa, z_inicio, z_meta, y_pe=None, nome='?'):
+    def __init__(self, mapa, z_inicio, z_meta, y_pe=None, nome='?',
+                 transformacao=None, mundo=None):
         self.nome = nome
+        self.mundo = mundo or mapa.get('meta', {}).get('mundo')
+        self.transformacao = transformacao or TransformacaoPercurso.identidade_padrao()
         self.pistas = mapa['pistas']
         self.z_inicio = z_inicio
         self.z_meta = z_meta
@@ -32,6 +36,14 @@ class Percurso:
         # x_partida e ajustado no fim do __init__, quando a geometria ja
         # estiver carregada: o meio do corredor nem sempre esta livre.
         self.x_partida = (self.x_min + self.x_max) / 2
+
+        # Mapas novos guardam tambem o nome do bloco. A fisica usa somente a
+        # caixa de colisao; o nome serve para conferir o JSON contra o mundo
+        # real com bot.blockAt() antes de executar uma politica.
+        self.nomes_blocos = {}
+        for chave, nome_bloco in mapa.get('nomes', {}).items():
+            x, y, z = (int(valor) for valor in chave.split(','))
+            self.nomes_blocos[(x, y, z)] = nome_bloco
 
         # Indice por coluna (x, z), que e como a fisica consulta.
         self.colunas = collections.defaultdict(list)
@@ -299,11 +311,42 @@ class Percurso:
     def carregar(cls, caminho_mapa, definicao_trecho):
         with open(caminho_mapa, encoding='utf-8') as arquivo:
             mapa = json.load(arquivo)
+
+        if 'inicio' in definicao_trecho or 'fim' in definicao_trecho:
+            transformacao = TransformacaoPercurso(
+                definicao_trecho.get('inicio'), definicao_trecho.get('fim'))
+            metadados = mapa.get('meta', {})
+            sistema = metadados.get('coordenadas')
+            if sistema != 'locais':
+                raise ValueError(
+                    f"o trecho '{definicao_trecho.get('nome', '?')}' usa inicio/fim, "
+                    f"mas o mapa {caminho_mapa!r} nao foi exportado em "
+                    "coordenadas locais. Use tools.mapear_percurso.")
+            if (metadados.get('inicio_mundo') != definicao_trecho.get('inicio')
+                    or metadados.get('fim_mundo') != definicao_trecho.get('fim')):
+                raise ValueError(
+                    f"o JSON de '{definicao_trecho.get('nome', '?')}' foi "
+                    "exportado com inicio/fim diferentes do cenario. "
+                    "Exporte o mapa novamente com tools.mapear_percurso.")
+            mundo_esperado = definicao_trecho.get('mundo')
+            if mundo_esperado and metadados.get('mundo') != mundo_esperado:
+                raise ValueError(
+                    f"o trecho espera '{mundo_esperado}', mas o JSON veio de "
+                    f"'{metadados.get('mundo')}'")
+            z_inicio = 0
+            z_meta = int(round(transformacao.comprimento))
+            y_pe = definicao_trecho.get(
+                'y_pe', definicao_trecho['inicio'].get('y', mapa.get('y_pe')))
+            return cls(mapa, z_inicio, z_meta, y_pe,
+                       definicao_trecho.get('nome', '?'), transformacao,
+                       definicao_trecho.get('mundo') or mapa.get('meta', {}).get('mundo'))
+
         return cls(mapa,
                    definicao_trecho['z_inicio'],
                    definicao_trecho['z_meta'],
                    definicao_trecho.get('y_pe'),
-                   definicao_trecho.get('nome', '?'))
+                   definicao_trecho.get('nome', '?'),
+                   mundo=definicao_trecho.get('mundo') or mapa.get('meta', {}).get('mundo'))
 
     def _tem_obstaculo(self, z):
         """Diz se algum bloco atrapalha na altura do corpo, neste z."""
@@ -352,6 +395,10 @@ class Percurso:
         return self.z_meta - self.z_inicio
 
     def resumo(self):
-        return (f"trecho {self.nome}: z {self.z_inicio}->{self.z_meta} "
-                f"({self.comprimento()} blocos), x [{self.x_min}, {self.x_max}], "
-                f"y_pe={self.y_pe}, {len(self.z_obstaculos)} obstaculos")
+        eixo = (f"progresso {self.z_inicio}->{self.z_meta}, "
+                f"mundo {self.transformacao.nome_direcao}"
+                if not self.transformacao.identidade
+                else f"z {self.z_inicio}->{self.z_meta}")
+        return (f"trecho {self.nome}: {eixo} ({self.comprimento()} blocos), "
+                f"lateral [{self.x_min}, {self.x_max}], y_pe={self.y_pe}, "
+                f"{len(self.z_obstaculos)} obstaculos")

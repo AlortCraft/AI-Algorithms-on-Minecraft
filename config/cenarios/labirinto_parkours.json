@@ -1,0 +1,27 @@
+{
+  "_comentario": [
+    "Treinos simples construidos dentro de world_labirinto.",
+    "Somente frente_1 esta cadastrado porque so suas coordenadas foram",
+    "confirmadas. Os outros dois devem ganhar seus proprios inicio, fim e",
+    "JSON exportado, sem inventar coordenadas."
+  ],
+  "mundo": "world_labirinto",
+  "trechos": {
+    "frente_1": {
+      "_nota": "Linha de blocos alternados: avanca 52 blocos em -X.",
+      "mapa": "config/mapas/world_labirinto_frente_1.json",
+      "inicio": {"x": 87, "y": 125, "z": 74},
+      "fim": {"x": 35, "y": 125, "z": 74},
+      "y_pe": 125
+    }
+  },
+  "trecho_padrao": "frente_1",
+  "episodio": {
+    "_nota": "A pista tem um bloco de largura; variar lateralmente o nascimento pode colocar o corpo quase fora da borda.",
+    "ticks_por_acao": 4,
+    "passos_maximos": 120,
+    "queda_abaixo_de": 3.0,
+    "variar_inicio": false
+  },
+  "calibracao": {"disponivel": false}
+}

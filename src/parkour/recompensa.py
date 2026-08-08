@@ -7,7 +7,7 @@ config/parkour.json para que mudar um deles seja um experimento registrado, e
 nao uma edicao de codigo esquecida.
 
 Comportamentos desejados        sinal
-  avancar no eixo z             + progresso * peso
+  avancar em direcao a meta     + progresso * peso
   chegar na meta                + meta
 Comportamentos indesejados
   cair da ponte                 - queda
@@ -17,7 +17,8 @@ Comportamentos indesejados
 Risco conhecido de recompensa mal calibrada (reward hacking): se `progresso`
 contasse valor absoluto em vez de deslocamento liquido, o agente poderia
 oscilar para frente e para tras e somar recompensa sem sair do lugar. Por isso
-o progresso e a diferenca liquida de z, e existe teste automatico para isso.
+o progresso e a diferenca liquida na direcao da meta, e existe teste automatico
+para isso. No mapa oficial ele coincide com +Z; em outros cenarios pode ser X.
 """
 
 
@@ -30,13 +31,13 @@ class Recompensa:
         self.parado = pesos.get('parado', -0.05)
         self.limite_parado = pesos.get('limite_parado', 0.05)
 
-    def calcular(self, z_antes, z_depois, motivo):
+    def calcular(self, progresso_antes, progresso_depois, motivo):
         """Recompensa de um passo.
 
         motivo e None enquanto o episodio segue, ou 'queda' / 'meta' no passo
         que o encerra.
         """
-        avanco = z_depois - z_antes
+        avanco = progresso_depois - progresso_antes
         valor = avanco * self.progresso + self.por_passo
 
         if abs(avanco) < self.limite_parado:

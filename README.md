@@ -41,7 +41,7 @@ Duas consequências práticas:
 Não precisa de Java, Node.js nem `pip install`.
 
 ```bash
-# 1. Conferir que a física e o ambiente estão sãos (62 verificações, segundos)
+# 1. Conferir que a física e o ambiente estão sãos (86 verificações, segundos)
 python -m testes.teste_fisica
 python -m testes.teste_ambiente
 
@@ -77,6 +77,26 @@ python -m src.parkour.vetorizado --taxas 0.1 0.2 0.4 --decaimentos 0.999 0.9995
 python -m src.parkour.experimento --agente dqn --episodios 4000
 ```
 
+### Escolher entre os dois mundos
+
+Os parâmetros de IA continuam em `config/parkour.json`; mundo, geometria e
+trechos podem ser escolhidos por cenário:
+
+```bash
+# Mapa grande original, que avança em +Z
+python -m src.parkour.experimento --cenario parkour_oficial --agente q
+
+# Treinos simples dentro de world_labirinto; o primeiro avança em -X
+python -m src.parkour.experimento --cenario labirinto_parkours \
+    --trecho frente_1 --agente q
+```
+
+O percurso `frente_1` começa em `(87, 125, 74)`, termina em
+`(35, 125, 74)` e é transformado internamente para “lateral × progresso”.
+Q-Learning e DQN não precisam conhecer o eixo real. A implementação e o modo
+de cadastrar os outros dois treinos estão em
+[docs/cenarios_e_coordenadas.md](docs/cenarios_e_coordenadas.md).
+
 ## O mapa, como ele é de verdade
 
 Tudo abaixo foi extraído dos arquivos `.mca` por `tools/mapear_mundo.py`, não
@@ -108,15 +128,18 @@ Aquele estágio exige pular, o que está fora do escopo atual.
 ```text
 config/
   parkour.json            # o que o grupo edita para fazer experimentos
+  cenarios/               # escolha segura entre world_parkour e world_labirinto
   bot.json.exemplo        # modelo; o bot.json real fica fora do Git
   mapas/                  # geometria exportada do mundo
 tools/
   nbt.py                  # leitor de .mca e NBT, só biblioteca padrão
   blocos.py               # caixas de colisão dos blocos
   mapear_mundo.py         # mundo -> JSON de geometria
+  mapear_percurso.py      # corredor entre dois pontos, em X ou Z -> JSON local
   gerar_percurso.py       # corredores procedurais
 src/parkour/
   fisica.py               # física do Minecraft em Python
+  coordenadas.py          # mundo (X/Z) <-> lateral/progresso
   percurso.py             # geometria e análise de viabilidade
   geometria.py            # "o jogador cabe aqui?", definido uma vez só
   estado.py acoes.py recompensa.py
@@ -226,9 +249,8 @@ op NOME_DO_BOT
 Sem isso o `/tp` do reset não funciona e nenhum episódio começa. O PaperMC
 registra em `Servidor-BOT/ops.json`.
 
-> **Atenção:** `ops.json` hoje tem `TrainedDrop` e `Cleitinho`, mas o código
-> antigo usava `LucidioBot`. Escolha um nome no `config/bot.json` e dê `op`
-> nele.
+> O nome padrão do bot de parkour é `LucidioBot`. Confirme que
+> `config/bot.json` usa esse nome e rode `op LucidioBot` no console do servidor.
 
 ## 4. Configurar o bot
 
@@ -243,7 +265,10 @@ no `.gitignore`, então cada integrante usa o próprio IP sem gerar conflito.
 ## 5. Rodar o bot
 
 ```bash
-python -m src.parkour.main
+python -m src.parkour.main --cenario parkour_oficial
+
+# ou, com world_labirinto selecionado no PaperMC
+python -m src.parkour.main --cenario labirinto_parkours --trecho frente_1
 ```
 
 Comandos no chat do Minecraft:
@@ -255,6 +280,7 @@ Comandos no chat do Minecraft:
 | `parkour teste` | anda cinco blocos — confirma que a ponte funciona |
 | `parkour reset` | teleporta para o início do trecho |
 | `parkour marcar` | grava a posição do jogador, para ajustar o trecho sem o F3 |
+| `parkour verificar` | compara uma amostra dos blocos reais com o JSON selecionado |
 | `parkour calibrar` | grava a trajetória real para a calibração |
 | `parkour guloso` | roda a política gulosa (não aprende, só confere) |
 | `parkour rodar` | roda no jogo a política treinada offline |
