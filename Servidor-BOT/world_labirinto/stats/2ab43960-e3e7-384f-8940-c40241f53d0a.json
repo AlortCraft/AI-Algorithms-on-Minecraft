@@ -1,5 +1,11 @@
 {
   "stats": {
+    "minecraft:picked_up": {
+      "minecraft:dandelion": 22,
+      "minecraft:wheat_seeds": 17,
+      "minecraft:wildflowers": 134,
+      "minecraft:azure_bluet": 36
+    },
     "minecraft:used": {
       "minecraft:oak_fence": 42,
       "minecraft:grass_block": 48,
@@ -14,31 +20,25 @@
       "minecraft:stone": 27,
       "minecraft:pale_oak_door": 4,
       "minecraft:oak_sign": 1,
-      "minecraft:light_blue_concrete": 262,
+      "minecraft:light_blue_concrete": 263,
       "minecraft:lime_concrete": 295,
       "minecraft:dirt": 26
     },
-    "minecraft:picked_up": {
-      "minecraft:dandelion": 22,
-      "minecraft:wheat_seeds": 17,
-      "minecraft:wildflowers": 134,
-      "minecraft:azure_bluet": 36
-    },
     "minecraft:custom": {
-      "minecraft:time_since_rest": 309910,
-      "minecraft:walk_one_cm": 179371,
-      "minecraft:leave_game": 21,
+      "minecraft:time_since_rest": 376968,
+      "minecraft:walk_one_cm": 191217,
+      "minecraft:leave_game": 25,
       "minecraft:damage_taken": 40,
-      "minecraft:damage_dealt": 50,
-      "minecraft:play_time": 309910,
-      "minecraft:jump": 349,
-      "minecraft:time_since_death": 309910,
-      "minecraft:sprint_one_cm": 31046,
+      "minecraft:damage_dealt": 70,
+      "minecraft:play_time": 376968,
+      "minecraft:jump": 386,
+      "minecraft:time_since_death": 376968,
+      "minecraft:sprint_one_cm": 32113,
       "minecraft:fall_one_cm": 950,
-      "minecraft:total_world_time": 309910,
-      "minecraft:fly_one_cm": 1198660,
+      "minecraft:total_world_time": 376968,
+      "minecraft:fly_one_cm": 1280546,
       "minecraft:crouch_one_cm": 992,
-      "minecraft:sneak_time": 2799
+      "minecraft:sneak_time": 2858
     }
   },
   "DataVersion": 4671
