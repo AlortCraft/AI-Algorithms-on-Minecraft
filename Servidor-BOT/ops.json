@@ -6,8 +6,32 @@
     "bypassesPlayerLimit": false
   },
   {
+    "uuid": "cba44064-e970-36d2-aa73-8693eb5c079a",
+    "name": "ParkourBot",
+    "level": 4,
+    "bypassesPlayerLimit": false
+  },
+  {
     "uuid": "ffb1b8e7-1627-3ebd-b271-a1a3938a32b4",
     "name": "Cleitinho",
+    "level": 4,
+    "bypassesPlayerLimit": false
+  },
+  {
+    "uuid": "cfa11e1f-1a86-3bd2-88c4-d2101c549586",
+    "name": "Yosef",
+    "level": 4,
+    "bypassesPlayerLimit": false
+  },
+  {
+    "uuid": "38081730-6975-30a6-841c-7564f9585d25",
+    "name": "Observador",
+    "level": 4,
+    "bypassesPlayerLimit": false
+  },
+  {
+    "uuid": "0bae2de5-fef0-3687-aa4d-a2d28464784b",
+    "name": "TestePulo",
     "level": 4,
     "bypassesPlayerLimit": false
   }

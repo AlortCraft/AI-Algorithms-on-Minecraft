@@ -1,0 +1,23 @@
+{
+  "_comentario": [
+    "Copie este arquivo para config/bot.json e ajuste para a sua maquina.",
+    "config/bot.json esta no .gitignore, entao cada integrante pode usar o",
+    "proprio IP sem gerar conflito no Git.",
+    "",
+    "host      use 'localhost' quando o bot e o servidor estao no mesmo",
+    "          computador; caso contrario, o IP privado do servidor.",
+    "porta     precisa ser igual a server-port em Servidor-BOT/server.properties.",
+    "usuario   nome que o bot mostra no servidor. Depois do primeiro acesso,",
+    "          rode 'op <usuario>' no console do PaperMC: sem isso o /tp do",
+    "          reset nao funciona e nenhum episodio comeca.",
+    "",
+    "Atencao: ops.json hoje tem TrainedDrop e Cleitinho, mas o codigo antigo",
+    "usava LucidioBot. Escolha um nome e de op nele."
+  ],
+
+  "host": "localhost",
+  "porta": 25565,
+  "usuario": "Cleitinho",
+  "jogador": "TrainedDrop",
+  "esconder_erros": false
+}

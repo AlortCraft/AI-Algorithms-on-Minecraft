@@ -1,0 +1,27 @@
+{
+  "stats": {
+    "minecraft:picked_up": {
+      "minecraft:bamboo": 19,
+      "minecraft:moss_block": 2
+    },
+    "minecraft:mined": {
+      "minecraft:moss_block": 2
+    },
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 81807,
+      "minecraft:walk_one_cm": 15411,
+      "minecraft:leave_game": 2,
+      "minecraft:damage_taken": 320,
+      "minecraft:play_time": 85130,
+      "minecraft:jump": 25,
+      "minecraft:time_since_death": 81806,
+      "minecraft:sprint_one_cm": 164,
+      "minecraft:fall_one_cm": 969,
+      "minecraft:total_world_time": 85130,
+      "minecraft:fly_one_cm": 408823,
+      "minecraft:sneak_time": 415,
+      "minecraft:deaths": 1
+    }
+  },
+  "DataVersion": 4671
+}

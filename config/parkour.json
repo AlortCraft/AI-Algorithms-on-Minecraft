@@ -1,0 +1,165 @@
+{
+  "_comentario": [
+    "Arquivo unico de configuracao dos experimentos de parkour.",
+    "Regra do grupo (pag. 4 do PDF): nenhum valor muda aqui sem uma linha",
+    "correspondente em docs/registro_experimentos.md, com hipotese e evidencia.",
+    "Os trechos vieram de tools/mapear_mundo.py, nao foram escolhidos no olho."
+  ],
+
+  "mapa": "config/mapas/world_parkour.json",
+
+  "trechos": {
+    "A": {
+      "_nota": "trecho de treino: comeca no spawn do mundo, 18 blocos, 2 obstaculos",
+      "estagio": "1. Bamboo",
+      "z_inicio": 999,
+      "z_meta": 1016,
+      "y_pe": 101
+    },
+    "B": {
+      "_nota": "alternancia real de lado; usar depois que A estiver resolvido",
+      "estagio": "1. Bamboo",
+      "z_inicio": 1042,
+      "z_meta": 1059,
+      "y_pe": 101
+    },
+    "sand": {"estagio": "2. Sand", "z_inicio": 1068, "z_meta": 1091, "y_pe": 101},
+    "sand2": {"estagio": "2. Sand", "z_inicio": 1107, "z_meta": 1125, "y_pe": 101},
+    "mud": {"estagio": "3. Mud", "z_inicio": 1162, "z_meta": 1179, "y_pe": 101},
+    "pale_garden": {"estagio": "5. Pale Garden", "z_inicio": 1245, "z_meta": 1258, "y_pe": 101},
+
+    "_nota_escalada": [
+      "Os trechos acima vieram do campo `andaveis` do mapear_mundo, definido",
+      "como 'o que da para vencer sem escalar'. Treinar so neles ensina a",
+      "desviar: medido em 08/08/2026, a politica passa 88% do tempo no piso.",
+      "Nao e defeito do agente - desviar resolve, e ele otimiza o que pedimos.",
+      "",
+      "Os dois abaixo tem 5 posicoes cada onde NAO existe passagem na altura",
+      "do piso: so se vence subindo. A recompensa continua sendo so progresso",
+      "em z; quem obriga a subir e a tarefa, nao um premio por altura. Premiar",
+      "altura direto convidaria o bot a subir num bloco e ficar parado la."
+    ],
+    "bamboo_escalada": {"estagio": "1. Bamboo", "z_inicio": 1026, "z_meta": 1036, "y_pe": 101, "escalada": true},
+    "end_escalada": {"estagio": "7. End", "z_inicio": 1380, "z_meta": 1390, "y_pe": 101, "escalada": true},
+    "nether": {"estagio": "6. Nether", "z_inicio": 1341, "z_meta": 1348, "y_pe": 101},
+    "end": {"estagio": "7. End", "z_inicio": 1351, "z_meta": 1361, "y_pe": 101},
+    "end2": {"estagio": "7. End", "z_inicio": 1366, "z_meta": 1376, "y_pe": 101}
+  },
+
+  "_trecho_removido": [
+    "pale_garden2 (z 1261-1269) saiu em 08/08/2026. Ele nunca teve solucao: a",
+    "analise antiga autorizava saltar de z=1262 para 1264 por cima de um muro",
+    "em 1263, porque nao conferia o que havia no meio do salto. Com a checagem",
+    "de corredor em Percurso.corredor_do_salto, o trecho ficou sem caminho -",
+    "e o agente guloso, que ficava pulando contra a parede ate truncar, estava",
+    "certo o tempo todo.",
+    "",
+    "Os numeros de pale_garden2 no registro (78,2% e 80,6% de conclusao) sao",
+    "de um trecho impossivel, medidos com fisica que deixava atravessar. Nao",
+    "reaproveitar."
+  ],
+
+  "_estagio_ausente": [
+    "O estagio 4. Copper nao aparece aqui porque nao tem nenhum trecho que se",
+    "vencca andando: em z=1217 a unica passagem fica a esquerda e em z=1219 so",
+    "a direita, e o corpo do bot ocupa as duas celulas ao mesmo tempo na",
+    "fronteira. Aquele estagio exige pular por cima, que esta fora do escopo",
+    "atual. Quem detectou isso foi tools/mapear_mundo.py, nao um palpite."
+  ],
+
+  "trecho_padrao": "A",
+
+  "calibracao": {
+    "_nota": [
+      "A calibracao NAO roda no percurso. Descoberto em jogo em 08/08/2026: o",
+      "maior trecho reto sem obstaculos do mundo inteiro tem 3 blocos, e a",
+      "sequencia de calibracao precisa de uns 40. Rodando no percurso, o bot",
+      "batia no pilar de z=1004 no tick 24 e o resto da medicao virava ruido.",
+      "Pior: o criterio antigo olhava o tick 40, ainda dentro da fase de",
+      "caminhada, entao a calibracao passava sem ter medido pulo nem parada.",
+      "",
+      "A pista abaixo e plana, livre e descartavel. Para construir e apagar:",
+      "  /fill 1098 150 1095 1102 150 1150 stone",
+      "  /fill 1098 150 1095 1102 150 1150 air",
+      "Ela fica a 100 blocos do percurso e nao encosta em nenhum estagio."
+    ],
+    "pista": {
+      "x_min": 1098,
+      "x_max": 1102,
+      "y_piso": 150,
+      "z_inicio": 1096,
+      "z_meta": 1149
+    }
+  },
+
+  "episodio": {
+    "_nota": "ticks_por_acao=4 equivale a uma decisao a cada 200 ms no jogo real",
+    "ticks_por_acao": 4,
+    "passos_maximos": 120,
+    "queda_abaixo_de": 3.0,
+    "_nota_inicio": [
+      "variar_inicio sorteia a posicao lateral de partida dentro da faixa",
+      "viavel. Sem isso, ambiente e politica avaliada sao os dois",
+      "deterministicos e os 200 episodios de avaliacao viram 200 copias do",
+      "mesmo episodio: o n informado seria 200 e o real, 1."
+    ],
+    "variar_inicio": true
+  },
+
+  "recompensa": {
+    "_nota": "pesos a investigar; pag. 4 do PDF pede uma mudanca por experimento",
+    "progresso": 1.0,
+    "por_passo": -0.02,
+    "queda": -10.0,
+    "meta": 20.0,
+    "parado": -0.05
+  },
+
+  "estado": {
+    "_nota": "faixas_x divide a largura do corredor; nao usar 3 pistas fixas,",
+    "_nota2": "porque entre dois bambus existe vao e a posicao em x e continua",
+    "faixas_x": 6,
+    "distancia_maxima": 4
+  },
+
+  "q_learning": {
+    "_nota_decaimento": [
+      "0.9995 substituiu 0.999 em 07/08/2026, com evidencia registrada em",
+      "docs/registro_experimentos.md (experimento 2): 100% e variacao zero em",
+      "5 sementes, contra 86,8% com variacao de 51,5% no valor anterior."
+    ],
+    "episodios": 4000,
+    "taxa_aprendizado": 0.2,
+    "desconto": 0.97,
+    "exploracao_inicial": 1.0,
+    "exploracao_final": 0.05,
+    "exploracao_decaimento": 0.9995
+  },
+
+  "dqn": {
+    "episodios": 4000,
+    "taxa_aprendizado": 0.0005,
+    "desconto": 0.97,
+    "memoria": 50000,
+    "lote": 64,
+    "camadas": [64, 64],
+    "atualizar_alvo_a_cada": 500,
+    "exploracao_inicial": 1.0,
+    "exploracao_final": 0.05,
+    "exploracao_decaimento": 0.9995
+  },
+
+  "avaliacao": {
+    "episodios": 100,
+    "exploracao": 0.0
+  },
+
+  "sementes": [0, 1, 2, 3, 4],
+
+  "randomizacao_de_dominio": {
+    "_nota": "ruido nas constantes da fisica durante o treino, para a politica",
+    "_nota2": "nao decorar o simulador. Ver docs/sim_para_real.md.",
+    "ativa": true,
+    "ruido_relativo": 0.03
+  }
+}
