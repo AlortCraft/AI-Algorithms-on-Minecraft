@@ -9,7 +9,7 @@
       "minecraft:white_stained_glass": 22,
       "minecraft:red_concrete": 3,
       "minecraft:jungle_door": 1,
-      "minecraft:orange_concrete": 83,
+      "minecraft:orange_concrete": 323,
       "minecraft:sea_lantern": 25,
       "minecraft:stone": 27,
       "minecraft:pale_oak_door": 4,
@@ -19,6 +19,7 @@
       "minecraft:dirt": 26
     },
     "minecraft:picked_up": {
+<<<<<<< HEAD
       "minecraft:dandelion": 22,
       "minecraft:wheat_seeds": 17,
       "minecraft:wildflowers": 134,
@@ -39,6 +40,27 @@
       "minecraft:fly_one_cm": 1198660,
       "minecraft:crouch_one_cm": 992,
       "minecraft:sneak_time": 2799
+=======
+      "minecraft:dandelion": 6,
+      "minecraft:wheat_seeds": 8,
+      "minecraft:wildflowers": 18,
+      "minecraft:azure_bluet": 2
+    },
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 273047,
+      "minecraft:walk_one_cm": 142446,
+      "minecraft:leave_game": 19,
+      "minecraft:damage_dealt": 50,
+      "minecraft:play_time": 273047,
+      "minecraft:jump": 299,
+      "minecraft:time_since_death": 273047,
+      "minecraft:sprint_one_cm": 22375,
+      "minecraft:fall_one_cm": 225,
+      "minecraft:total_world_time": 273047,
+      "minecraft:fly_one_cm": 1025127,
+      "minecraft:crouch_one_cm": 719,
+      "minecraft:sneak_time": 2566
+>>>>>>> 641b15e (parkours do mapa atualizados)
     }
   },
   "DataVersion": 4671

@@ -1,6 +1,7 @@
 {
   "stats": {
     "minecraft:custom": {
+<<<<<<< HEAD
       "minecraft:damage_resisted": 20,
       "minecraft:time_since_rest": 24187,
       "minecraft:walk_one_cm": 32162,
@@ -22,6 +23,14 @@
     },
     "minecraft:mined": {
       "minecraft:short_grass": 1
+=======
+      "minecraft:time_since_rest": 1719,
+      "minecraft:walk_one_cm": 306,
+      "minecraft:total_world_time": 1719,
+      "minecraft:leave_game": 2,
+      "minecraft:play_time": 1719,
+      "minecraft:time_since_death": 1719
+>>>>>>> 641b15e (parkours do mapa atualizados)
     }
   },
   "DataVersion": 4671

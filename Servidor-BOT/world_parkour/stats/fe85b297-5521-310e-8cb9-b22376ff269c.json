@@ -1,11 +1,19 @@
 {
   "stats": {
     "minecraft:custom": {
+<<<<<<< HEAD
       "minecraft:time_since_rest": 2699,
       "minecraft:total_world_time": 2699,
       "minecraft:leave_game": 1,
       "minecraft:play_time": 2699,
       "minecraft:time_since_death": 2699
+=======
+      "minecraft:time_since_rest": 518,
+      "minecraft:total_world_time": 518,
+      "minecraft:leave_game": 1,
+      "minecraft:play_time": 518,
+      "minecraft:time_since_death": 518
+>>>>>>> 641b15e (parkours do mapa atualizados)
     }
   },
   "DataVersion": 4671
