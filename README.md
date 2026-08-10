@@ -92,9 +92,9 @@ python -m src.parkour.experimento --cenario labirinto_parkours \
 ```
 
 O percurso `frente_1` começa em `(87, 125, 74)`, termina em
-`(35, 125, 74)` e é transformado internamente para “lateral × progresso”.
+`(34, 125, 74)` e é transformado internamente para “lateral × progresso”.
 Q-Learning e DQN não precisam conhecer o eixo real. A implementação e o modo
-de cadastrar os outros dois treinos estão em
+de usar o segundo treino, `frente_2`, estão em
 [docs/cenarios_e_coordenadas.md](docs/cenarios_e_coordenadas.md).
 
 ## O mapa, como ele é de verdade

@@ -11,6 +11,9 @@ Por isso existem dois modos, para o grupo comparar em vez de escolher no chute:
              cru: o agente precisa descobrir sozinho para onde ir.
   'vao'      diz qual faixa contem a passagem mais proxima. E dado mastigado:
              aprende bem mais rapido, mas boa parte da decisao ja veio pronta.
+  'piso'     olha apoios e buracos nas quatro celulas seguintes, a fase do
+             salto, a velocidade e a proximidade da borda. E o modo pequeno
+             usado no parkour reto do labirinto.
 
 O modo 'mascara' e o padrao justamente por ser o mais honesto. Comparar os dois
 e um experimento previsto em docs/registro_experimentos.md.
@@ -30,7 +33,7 @@ ALTURA_MAXIMA_DE_PULO = 1.25
 
 class Discretizador:
     def __init__(self, percurso, faixas_x=6, distancia_maxima=4, modo='mascara'):
-        if modo not in ('mascara', 'vao'):
+        if modo not in ('mascara', 'vao', 'piso'):
             raise ValueError(f"modo de estado desconhecido: {modo}")
 
         self.percurso = percurso
@@ -105,6 +108,11 @@ class Discretizador:
     @property
     def quantidade(self):
         """Quantos estados diferentes existem."""
+        if self.modo == 'piso':
+            # 4 bits de piso a frente, 4 partes do bloco atual, 3 fases
+            # verticais e 3 faixas de velocidade. No corredor reto a posicao
+            # lateral nao muda a decisao e, portanto, nao entra no estado.
+            return (2 ** 4) * 4 * 3 * 3
         if self.modo == 'mascara':
             alternativas_frente = 2 ** self.faixas_x
         else:
@@ -152,6 +160,9 @@ class Discretizador:
 
     def indice(self, corpo):
         """Numero unico do estado, usado como linha da tabela Q."""
+        if self.modo == 'piso':
+            return self._indice_piso(corpo)
+
         faixa, distancia, livres, no_chao, classe = self._leitura(corpo)
 
         if self.modo == 'mascara':
@@ -175,6 +186,55 @@ class Discretizador:
         indice = indice * 2 + (1 if no_chao else 0)
         indice = indice * CLASSES_DE_ALTURA + classe
         return indice
+
+    def _indice_piso(self, corpo):
+        """Estado pequeno para corredores cujo desafio sao vaos no chao.
+
+        A mascara olha as quatro celulas seguintes no sentido do progresso.
+        Um bit 1 significa que existe uma superficie onde o centro do jogador
+        cabe e cuja altura ainda e alcancavel. A parte fracionaria de ``z``
+        informa se o corpo esta no inicio ou perto da borda do bloco atual.
+        """
+        celula = int(corpo.z // 1)
+        mascara_piso = 0
+        for distancia in range(1, 5):
+            if self._tem_apoio(corpo, celula + distancia):
+                mascara_piso |= 1 << (distancia - 1)
+
+        fracao = corpo.z - (corpo.z // 1)
+        parte_do_bloco = min(3, max(0, int(fracao * 4)))
+
+        if corpo.no_chao:
+            fase_vertical = 0
+        elif corpo.vy > 0.05:
+            fase_vertical = 1
+        else:
+            fase_vertical = 2
+
+        velocidade = abs(corpo.vz)
+        if velocidade < 0.12:
+            faixa_velocidade = 0
+        elif velocidade < 0.25:
+            faixa_velocidade = 1
+        else:
+            faixa_velocidade = 2
+
+        indice = mascara_piso
+        indice = indice * 4 + parte_do_bloco
+        indice = indice * 3 + fase_vertical
+        indice = indice * 3 + faixa_velocidade
+        return indice
+
+    def _tem_apoio(self, corpo, celula):
+        """Ha piso alcancavel nesta celula sob a linha atual do jogador?"""
+        for altura, faixas in self.percurso.superficies_em(celula):
+            if altura - corpo.y > ALTURA_MAXIMA_DE_PULO:
+                continue
+            if corpo.y - altura > 3.0:
+                continue
+            if any(inicio <= corpo.x <= fim for inicio, fim in faixas):
+                return True
+        return False
 
     # ------------------------------------------------------------------
     # estado continuo, para a rede neural

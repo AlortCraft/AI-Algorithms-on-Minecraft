@@ -27,6 +27,7 @@ Comandos no chat:
     parkour marcar       grava a posicao do jogador, para ajustar o trecho
     parkour calibrar     roda a sequencia fixa e grava a trajetoria real
     parkour guloso       roda a politica gulosa (nao aprende, so confere)
+    parkour demonstrar   pathfinder lento, com saltos mais visiveis
     parkour rodar        roda a politica treinada offline
     parkour parar        interrompe o que estiver rodando
 """
@@ -71,6 +72,10 @@ class BotParkour:
             'username': self.dados_bot['usuario'],
             'hideErrors': self.dados_bot.get('esconder_erros', False),
         })
+        caminho_ponte = os.path.join(os.path.dirname(__file__),
+                                     'pathfinder_bridge.js').replace('\\', '/')
+        self.pathfinder_ponte = require(caminho_ponte)
+        self.pathfinder_ponte.instalar(self.bot)
 
         self.ambiente = None
         self.tarefa = None
@@ -118,7 +123,7 @@ class BotParkour:
 
     def comando_ajuda(self):
         for linha in ("parkour info / teste / reset / marcar / verificar",
-                      "parkour calibrar | guloso | rodar | parar"):
+                      "parkour calibrar | guloso | demonstrar | rodar | parar"):
             self.falar(linha)
 
     def comando_info(self):
@@ -231,24 +236,53 @@ class BotParkour:
         self.falar("agora rode: python -m src.parkour.calibracao "
                    "--real resultados/metricas/trajetoria_real.json")
 
-    def _rodar_politica(self, agente, rotulo):
+    def _rodar_politica(self, agente, rotulo, modo_didatico=False):
         ambiente = self.preparar_ambiente()
         _, informacoes = ambiente.reset()
         estado = ambiente.observar()
 
-        while not self.parar_pedido.is_set():
-            acao = agente.escolher(estado, ambiente)
-            _, _, terminou, truncou, informacoes = ambiente.passo(acao)
-            estado = ambiente.observar()
-            if terminou or truncou:
-                break
+        if isinstance(agente, AgenteGuloso):
+            informacoes = ambiente.correr_com_pathfinder(
+                self.pathfinder_ponte, self.parar_pedido, modo_didatico)
+        else:
+            while not self.parar_pedido.is_set():
+                acao = agente.escolher(estado, ambiente)
+                _, _, terminou, truncou, informacoes = ambiente.passo(acao)
+                estado = ambiente.observar()
+                if terminou or truncou:
+                    break
 
         self.falar(f"{rotulo}: {informacoes['motivo'] or 'interrompido'} em "
                    f"{informacoes['passos']} passos, "
                    f"progresso {informacoes['progresso']:.0%}")
+        self.falar(f"posicao final: mundo x={informacoes['mundo_x']:.2f} "
+                   f"y={informacoes['mundo_y']:.2f} "
+                   f"z={informacoes['mundo_z']:.2f}; "
+                   f"local={informacoes['z']:.2f}")
+        if informacoes.get('pathfinder'):
+            dados = informacoes['pathfinder']
+            self.falar(f"pathfinder: {dados.get('status', '?')}"
+                       f"; reset={dados.get('reset') or 'nenhum'}")
+        if informacoes.get('vertical'):
+            vertical = informacoes['vertical']
+            self.falar(
+                f"vertical: y {vertical['y_minimo']:.2f}.."
+                f"{vertical['y_maximo']:.2f} "
+                f"(variacao {vertical['variacao_y']:.2f}); "
+                f"saltos={vertical['saltos']}; "
+                f"ticks_no_ar={vertical['ticks_no_ar']}")
+            if (informacoes['chegou']
+                    and vertical['variacao_y'] < 0.20):
+                self.falar(
+                    "AVISO: concluiu sem variacao vertical; confira modo de "
+                    "jogo, voo e blocos invisiveis no servidor")
 
     def comando_guloso(self):
         self._rodar_politica(AgenteGuloso(), 'guloso')
+
+    def comando_demonstrar(self):
+        """Executa o mesmo planejador sem sprint para exibir os saltos."""
+        self._rodar_politica(AgenteGuloso(), 'demonstracao', modo_didatico=True)
 
     def comando_rodar(self):
         """Roda no jogo a politica treinada offline.
@@ -270,7 +304,9 @@ class BotParkour:
             return
 
         agente = AgenteQLearning(ambiente.quantidade_estados,
-                                 ambiente.quantidade_acoes)
+                                 ambiente.quantidade_acoes,
+                                 configuracao_modulo.parametros_q_learning(
+                                     self.configuracao))
         agente.carregar(modelo)
         agente.modo_avaliacao()
         self._rodar_politica(agente, 'politica treinada')
@@ -355,6 +391,8 @@ def main():
             parkour.em_segundo_plano(parkour.comando_verificar)
         elif 'calibrar' in texto:
             parkour.em_segundo_plano(parkour.comando_calibrar)
+        elif 'demonstrar' in texto:
+            parkour.em_segundo_plano(parkour.comando_demonstrar)
         elif 'guloso' in texto:
             parkour.em_segundo_plano(parkour.comando_guloso)
         elif 'rodar' in texto:

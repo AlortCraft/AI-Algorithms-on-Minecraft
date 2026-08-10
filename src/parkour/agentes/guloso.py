@@ -53,6 +53,14 @@ class AgenteGuloso(Agente):
         corpo = ambiente.corpo
         percurso = ambiente.percurso
 
+        # Num corredor de uma pista sem obstaculos frontais, como frente_1,
+        # os unicos riscos simulados sao os vaos no piso, e correr+pular chega
+        # sempre. No jogo real o autojump deriva em relacao aos blocos; por
+        # isso `BotParkour` troca esta acao continua pelos pulsos sincronizados
+        # de `AmbienteMinecraft.correr_com_saltos_sincronizados`.
+        if len(percurso.pistas) == 1 and not percurso.z_obstaculos:
+            return ACAO_CORRER_PULO
+
         alvo = self._alvo(percurso, corpo.x, corpo.z, corpo.y)
         if alvo is None:
             return ACAO_CORRER

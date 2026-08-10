@@ -8,7 +8,7 @@ Exemplo para o primeiro treino dentro de ``world_labirinto``::
 
     python -m tools.mapear_percurso \
         --mundo Servidor-BOT/world_labirinto \
-        --inicio 87 125 74 --fim 35 125 74 \
+        --inicio 87 125 74 --fim 34 125 74 \
         --saida config/mapas/world_labirinto_frente_1.json --perfil
 
 Execute com o PaperMC desligado, depois de encerrar o servidor com ``stop``.
@@ -100,20 +100,40 @@ def mapear(pasta_mundo, inicio, fim, y_min=None, y_max=None, raio_lateral=8):
     # que apenas cruzam a largada/chegada aparecem em poucas posicoes e ficam
     # abaixo desse valor.
     apoios = collections.Counter()
+    apoios_em_alturas = collections.Counter()
     total = comprimento + 1
     for progresso in range(0, comprimento + 1):
         vistos = set()
+        vistos_em_alturas = set()
         for lateral, y, altura, largura in solidos.get(str(progresso), []):
-            if largura >= 0.875 and abs((y + altura) - y_pe) <= 1e-4:
+            if largura < 0.875:
+                continue
+            vistos_em_alturas.add(lateral)
+            if abs((y + altura) - y_pe) <= 1e-4:
                 vistos.add(lateral)
         apoios.update(vistos)
+        apoios_em_alturas.update(vistos_em_alturas)
 
     candidatas = [lateral for lateral, quantidade in apoios.items()
                   if quantidade >= max(2, math.ceil(total * 0.45))]
+
+    # Um parkour que sobe e desce pode ter poucos apoios no nivel inicial,
+    # embora repita a mesma linha lateral em alturas diferentes. Nesse caso,
+    # usa a coluna vertical mais recorrente como pista. O limiar relativo
+    # evita confundir as plataformas largas de inicio/fim com o corredor.
+    if not candidatas and apoios_em_alturas:
+        maior_recorrencia = max(apoios_em_alturas.values())
+        limiar_vertical = max(2, math.ceil(maior_recorrencia * 0.60))
+        candidatas = [
+            lateral for lateral, quantidade in apoios_em_alturas.items()
+            if quantidade >= limiar_vertical
+        ]
+
     pistas = _grupo_de_pistas(candidatas, centro_lateral)
     if not pistas:
         melhores = ', '.join(f'{x}:{n}/{total}'
-                             for x, n in apoios.most_common(8)) or '(nenhum apoio)'
+                             for x, n in apoios_em_alturas.most_common(8)) \
+            or '(nenhum apoio)'
         raise ValueError(
             f'nao foi possivel detectar o piso em y={y_pe}. '
             f'Melhores colunas laterais: {melhores}')

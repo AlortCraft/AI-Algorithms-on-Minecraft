@@ -42,7 +42,8 @@ def criar_agente(nome, ambiente, configuracao, semente):
     if nome in ('q', 'q_learning'):
         return AgenteQLearning(ambiente.quantidade_estados,
                                ambiente.quantidade_acoes,
-                               configuracao.get('q_learning', {}),
+                               configuracao_modulo.parametros_q_learning(
+                                   configuracao),
                                semente=semente)
     if nome == 'dqn':
         from .agentes.dqn import AgenteDQN

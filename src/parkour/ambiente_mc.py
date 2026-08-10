@@ -16,6 +16,7 @@ resto roda com Python puro, e e por isso que quatro dos cinco integrantes
 conseguem trabalhar sem o servidor ligado.
 """
 
+import json
 import time
 
 from . import acoes as catalogo_acoes
@@ -55,6 +56,8 @@ class AmbienteMinecraft:
     # isto. Abaixo disso ele nao esta andando devagar, esta parado.
     PARADO_EPSILON = 0.02
     PASSOS_PARADO_MAXIMO = 8
+    TELEPORTE_TOLERANCIA = 0.35
+    TELEPORTE_TICKS_MAXIMO = 100
 
     def __init__(self, bot, percurso, configuracao, vec3=None):
         self.bot = bot
@@ -134,7 +137,7 @@ class AmbienteMinecraft:
         yaw = self.percurso.transformacao.yaw
         self.bot.chat(f"/tp {self.bot.username} {destino_x:.3f} "
                       f"{destino_y:.3f} {destino_z:.3f} {yaw:.1f} 0")
-        self.esperar_ticks(10)
+        self._esperar_teleporte(destino_x, destino_y, destino_z)
 
         self.passos = 0
         self.passos_parado = 0
@@ -142,13 +145,55 @@ class AmbienteMinecraft:
         self.motivo = None
         return self.observar(), self.informacoes()
 
+    def _esperar_teleporte(self, destino_x, destino_y, destino_z):
+        """So libera o episodio quando o bot realmente chegou ao inicio.
+
+        Enviar ``/tp`` pelo chat e dormir um tempo fixo nao garante que o
+        servidor remoto ja processou o comando. Quando isso acontecia, a
+        primeira acao ainda usava a posicao anterior (as vezes durante uma
+        queda) e produzia progresso acima de 100% ou encerrava em um passo.
+        """
+        ultima_posicao = None
+        for _ in range(self.TELEPORTE_TICKS_MAXIMO):
+            try:
+                ultima_posicao = self.corpo.posicao_mundo
+                diferencas = (
+                    ultima_posicao[0] - destino_x,
+                    ultima_posicao[1] - destino_y,
+                    ultima_posicao[2] - destino_z,
+                )
+                perto = sum(valor * valor for valor in diferencas) ** 0.5 \
+                    <= self.TELEPORTE_TOLERANCIA
+                if perto and self.corpo.no_chao:
+                    # Dois ticks extras confirmam que o bot assentou e nao
+                    # estava apenas atravessando o ponto durante uma queda.
+                    self.esperar_ticks(2)
+                    return
+            except Exception:
+                # Durante a morte/respawn a entidade pode desaparecer por
+                # alguns ticks. O laco continua ate ela existir novamente.
+                pass
+            self.esperar_ticks(1)
+
+        atual = ('indisponivel' if ultima_posicao is None else
+                 ', '.join(f'{valor:.2f}' for valor in ultima_posicao))
+        raise RuntimeError(
+            'o teleporte para o inicio nao foi confirmado em 5 segundos; '
+            f'posicao atual: {atual}. Confira se o bot possui OP e se o '
+            'servidor terminou de carregar o mundo.')
+
     def passo(self, acao):
         entradas = catalogo_acoes.entradas_de(acao)
         progresso_antes = self.corpo.z
 
         self.aplicar(entradas)
         self.esperar_ticks(self.ticks_por_acao)
-        self.soltar_controles()
+
+        # Nao solte aqui. No simulador, a acao seguinte comeca no tick
+        # imediatamente posterior; zerar os controles entre duas decisoes
+        # interrompia sprint/jump por causa da latencia Python-JavaScript e o
+        # bot perdia o ritmo entre plataformas. ``aplicar`` atualiza todos os
+        # controles no proximo passo, e o fim do episodio os solta abaixo.
 
         self.passos += 1
         progresso_depois = self.corpo.z
@@ -180,9 +225,182 @@ class AmbienteMinecraft:
         if truncou:
             self.motivo = 'tempo'
 
+        if terminou or truncou:
+            self.soltar_controles()
+
         valor = self.recompensa.calcular(progresso_antes, self.corpo.z,
                                          self.motivo if terminou else None)
         return self.observar(), valor, terminou, truncou, self.informacoes()
+
+    def correr_com_saltos_sincronizados(self, parar_pedido=None):
+        """Cruza um corredor simples, enfileirando o pulo antes de aterrissar.
+
+        Manter ``jump`` pressionado depende do temporizador de autojump do
+        cliente. No servidor real esse ritmo deriva em relacao aos blocos e o
+        bot pode chegar baixo demais na plataforma seguinte. Esperar
+        ``onGround`` tambem nao basta: esse estado pode durar menos que a
+        leitura atraves da ponte Python/JavaScript. Aqui o pulo fica preparado
+        durante a descida e o contato com o apoio dispara o salto seguinte;
+        durante a subida ele fica desligado para reiniciar a fila de pulo.
+
+        O reset deve ser feito pelo chamador. Este controle e exclusivo da
+        validacao gulosa no jogo; treino e politicas aprendidas continuam
+        usando ``passo`` para preservar a mesma interface do simulador.
+        """
+        if len(self.percurso.pistas) != 1 or self.percurso.z_obstaculos:
+            raise ValueError('saltos sincronizados exigem corredor simples')
+
+        self.aplicar(catalogo_acoes.entradas_de(1))  # correr
+        self.bot.setControlState('jump', False)
+
+        ticks = 0
+        ticks_limite = self.passos_maximos * self.ticks_por_acao
+        progresso_amostra = self.corpo.z
+
+        try:
+            while ticks < ticks_limite:
+                if parar_pedido is not None and parar_pedido.is_set():
+                    break
+
+                # Liga no chao e durante a descida, antes do pacote curto de
+                # `onGround` da aterrissagem. Desliga na subida: essa borda
+                # false -> true rearma o salto sem depender do autojump.
+                preparar_pulo = self.corpo.no_chao or self.corpo.vy <= 0.0
+                self.bot.setControlState('jump', preparar_pulo)
+
+                self.esperar_ticks(1)
+                ticks += 1
+
+                progresso = self.corpo.z
+                self.z_maximo = max(self.z_maximo, progresso)
+                self.passos = (ticks + self.ticks_por_acao - 1) // self.ticks_por_acao
+
+                if ticks % self.ticks_por_acao == 0:
+                    if abs(progresso - progresso_amostra) < self.PARADO_EPSILON:
+                        self.passos_parado += 1
+                    else:
+                        self.passos_parado = 0
+                    progresso_amostra = progresso
+
+                if self.corpo.y < self.percurso.y_pe - self.queda_abaixo_de:
+                    self.motivo = 'queda'
+                    break
+                if progresso >= self.percurso.z_meta:
+                    self.motivo = 'meta'
+                    break
+                if self.passos_parado >= self.PASSOS_PARADO_MAXIMO:
+                    self.motivo = 'travado'
+                    break
+            else:
+                self.motivo = 'tempo'
+        finally:
+            self.soltar_controles()
+
+        return self.informacoes()
+
+    def correr_com_pathfinder(self, ponte_pathfinder, parar_pedido=None,
+                              modo_didatico=False):
+        """Delega o parkour real ao planejador A* do Mineflayer.
+
+        Diferente do controlador por cadencia, o pathfinder le os blocos do
+        servidor, planeja os saltos e acompanha a execucao. Mineracao,
+        colocacao de blocos e quedas deliberadas sao desativadas pela ponte.
+        """
+        destino_local = (self.percurso.x_partida, self.percurso.y_pe,
+                         self.percurso.z_meta + 0.5)
+        destino = self.percurso.transformacao.para_mundo(*destino_local)
+
+        ponte_pathfinder.configurar(self.bot, modo_didatico)
+        ponte_pathfinder.iniciar(self.bot, *destino)
+
+        ticks = 0
+        ticks_limite = self.passos_maximos * self.ticks_por_acao
+        progresso_amostra = self.corpo.z
+        estado_pathfinder = {'status': 'calculando'}
+        y_inicial = self.corpo.y
+        y_minimo = y_inicial
+        y_maximo = y_inicial
+        vy_minimo = self.corpo.vy
+        vy_maximo = self.corpo.vy
+        ticks_no_ar = 0
+        saltos = 0
+        estava_subindo = False
+
+        try:
+            while ticks < ticks_limite:
+                if parar_pedido is not None and parar_pedido.is_set():
+                    break
+
+                # Amostra a cada tick. Ler a cada dois escondia justamente o
+                # contato curto com os blocos que queremos diagnosticar.
+                self.esperar_ticks(1)
+                ticks += 1
+                progresso = self.corpo.z
+                altura = self.corpo.y
+                velocidade_y = self.corpo.vy
+                no_chao = self.corpo.no_chao
+                self.z_maximo = max(self.z_maximo, progresso)
+                self.passos = (ticks + self.ticks_por_acao - 1) // self.ticks_por_acao
+                y_minimo = min(y_minimo, altura)
+                y_maximo = max(y_maximo, altura)
+                vy_minimo = min(vy_minimo, velocidade_y)
+                vy_maximo = max(vy_maximo, velocidade_y)
+                if not no_chao:
+                    ticks_no_ar += 1
+                subindo = velocidade_y > 0.05
+                if subindo and not estava_subindo:
+                    saltos += 1
+                estava_subindo = subindo
+
+                try:
+                    estado_pathfinder = json.loads(
+                        str(ponte_pathfinder.consultar(self.bot)))
+                except (TypeError, ValueError):
+                    estado_pathfinder = {'status': 'indisponivel'}
+
+                if ticks % self.ticks_por_acao == 0:
+                    if abs(progresso - progresso_amostra) < self.PARADO_EPSILON:
+                        self.passos_parado += 1
+                    else:
+                        self.passos_parado = 0
+                    progresso_amostra = progresso
+
+                if (estado_pathfinder.get('chegou')
+                        or progresso >= self.percurso.z_meta):
+                    self.motivo = 'meta'
+                    break
+                if self.corpo.y < self.percurso.y_pe - self.queda_abaixo_de:
+                    self.motivo = 'queda'
+                    break
+                if estado_pathfinder.get('status') in ('noPath', 'timeout'):
+                    self.motivo = 'sem_rota'
+                    break
+                # Enquanto calcula uma rota parcial, ficar parado e normal.
+                if (self.passos_parado >= self.PASSOS_PARADO_MAXIMO
+                        and estado_pathfinder.get('status') not in
+                        ('calculando', 'partial')):
+                    self.motivo = 'travado'
+                    break
+            else:
+                self.motivo = 'tempo'
+        finally:
+            ponte_pathfinder.parar(self.bot)
+            self.soltar_controles()
+
+        informacoes = self.informacoes()
+        informacoes['pathfinder'] = estado_pathfinder
+        informacoes['modo_didatico'] = modo_didatico
+        informacoes['vertical'] = {
+            'y_inicial': y_inicial,
+            'y_minimo': y_minimo,
+            'y_maximo': y_maximo,
+            'variacao_y': y_maximo - y_minimo,
+            'vy_minimo': vy_minimo,
+            'vy_maximo': vy_maximo,
+            'ticks_no_ar': ticks_no_ar,
+            'saltos': saltos,
+        }
+        return informacoes
 
     # ------------------------------------------------------------------
 
@@ -194,6 +412,8 @@ class AmbienteMinecraft:
 
     def informacoes(self):
         mundo_x, mundo_y, mundo_z = self.corpo.posicao_mundo
+        progresso = ((self.z_maximo - self.percurso.z_inicio)
+                     / max(1e-9, self.percurso.comprimento()))
         return {
             'x': self.corpo.x,
             'y': self.corpo.y,
@@ -204,8 +424,7 @@ class AmbienteMinecraft:
             'z_maximo': self.z_maximo,
             'passos': self.passos,
             'motivo': self.motivo,
-            'progresso': ((self.z_maximo - self.percurso.z_inicio)
-                          / max(1e-9, self.percurso.comprimento())),
+            'progresso': min(1.0, max(0.0, progresso)),
             'chegou': self.motivo == 'meta',
         }
 

@@ -190,6 +190,8 @@ class AmbienteParkour:
         return self.discretizador.vetor(self.corpo)
 
     def informacoes(self):
+        progresso = ((self.z_maximo - self.percurso.z_inicio)
+                     / max(1e-9, self.percurso.comprimento()))
         return {
             'x': self.corpo.x,
             'y': self.corpo.y,
@@ -197,7 +199,6 @@ class AmbienteParkour:
             'z_maximo': self.z_maximo,
             'passos': self.passos,
             'motivo': self.motivo,
-            'progresso': ((self.z_maximo - self.percurso.z_inicio)
-                          / max(1e-9, self.percurso.comprimento())),
+            'progresso': min(1.0, max(0.0, progresso)),
             'chegou': self.motivo == 'meta',
         }

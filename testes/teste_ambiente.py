@@ -14,6 +14,8 @@ import sys
 from src.parkour import acoes, config as configuracao_modulo
 from src.parkour.agentes.aleatorio import AgenteAleatorio
 from src.parkour.agentes.guloso import AgenteGuloso
+from src.parkour.agentes.q_learning import AgenteQLearning
+from src.parkour.ambiente_mc import AmbienteMinecraft
 from src.parkour.ambiente_sim import AmbienteParkour
 from src.parkour.coordenadas import TransformacaoPercurso
 from src.parkour.percurso import Percurso
@@ -95,6 +97,146 @@ def teste_reset_reprodutivel(verificador):
                            "o inicio sorteado cai sempre numa faixa viavel")
 
 
+def teste_ambiente_mc_sincroniza_reset_e_controles(verificador):
+    """Latencia do servidor nao pode liberar um episodio antes do /tp."""
+    class Objeto:
+        pass
+
+    class BotFalso:
+        def __init__(self):
+            self.username = 'LucidioBot'
+            self.entity = Objeto()
+            self.entity.position = Objeto()
+            self.entity.position.x = 0.0
+            self.entity.position.y = 0.0
+            self.entity.position.z = 0.0
+            self.entity.onGround = False
+            self.entity.velocity = Objeto()
+            self.entity.velocity.x = 0.0
+            self.entity.velocity.y = 0.0
+            self.entity.velocity.z = 0.0
+            self.controles = {}
+            self.ticks = 0
+            self.destino = None
+            self.teleportar_no_tick = None
+
+        def chat(self, mensagem):
+            partes = mensagem.split()
+            self.destino = tuple(float(valor) for valor in partes[2:5])
+            self.teleportar_no_tick = self.ticks + 3
+
+        def waitForTicks(self, quantidade):
+            for _ in range(quantidade):
+                self.ticks += 1
+                if (self.destino is not None
+                        and self.ticks >= self.teleportar_no_tick):
+                    posicao = self.entity.position
+                    posicao.x, posicao.y, posicao.z = self.destino
+                    self.entity.onGround = True
+
+        def setControlState(self, nome, valor):
+            self.controles[nome] = bool(valor)
+
+    configuracao = configuracao_modulo.carregar(cenario='labirinto_parkours')
+    definicao = configuracao_modulo.trecho(configuracao, 'frente_1')
+    percurso = Percurso.carregar(
+        configuracao_modulo.caminho_mapa(configuracao, definicao), definicao)
+    bot = BotFalso()
+    ambiente = AmbienteMinecraft(bot, percurso, configuracao)
+
+    ambiente.reset()
+    mundo_x, mundo_y, mundo_z = ambiente.corpo.posicao_mundo
+    verificador.verdadeiro(bot.ticks >= 5,
+                           'reset esperou o teleporte e o assentamento')
+    verificador.perto(mundo_x, 87.5, 1e-9,
+                      'reset confirmou X no inicio real')
+    verificador.perto(mundo_y, 125.0, 1e-9,
+                      'reset confirmou Y sobre o piso')
+    verificador.perto(mundo_z, 74.5, 1e-9,
+                      'reset confirmou Z no centro da pista')
+
+    ambiente.passo(2)  # correr_pulo
+    verificador.verdadeiro(
+        bot.controles.get('forward') and bot.controles.get('sprint')
+        and bot.controles.get('jump'),
+        'controles continuam ativos entre duas decisoes')
+    ambiente.soltar_controles()
+    verificador.verdadeiro(not any(bot.controles.values()),
+                           'controles sao soltos ao encerrar')
+
+
+def teste_ambiente_mc_sincroniza_cada_salto(verificador):
+    """O guloso prepara o salto na descida, sem depender de onGround."""
+    class Objeto:
+        pass
+
+    class BotFalso:
+        def __init__(self):
+            self.username = 'LucidioBot'
+            self.entity = Objeto()
+            self.entity.position = Objeto()
+            self.entity.position.x = 87.5
+            self.entity.position.y = 125.0
+            self.entity.position.z = 74.5
+            self.entity.onGround = True
+            self.entity.velocity = Objeto()
+            self.entity.velocity.x = 0.0
+            self.entity.velocity.y = 0.0
+            self.entity.velocity.z = 0.0
+            self.controles = {}
+            self.saltos = 0
+            self.ticks_no_ar = 0
+
+        def chat(self, mensagem):
+            partes = mensagem.split()
+            posicao = self.entity.position
+            posicao.x, posicao.y, posicao.z = (
+                float(valor) for valor in partes[2:5])
+            self.entity.onGround = True
+
+        def waitForTicks(self, quantidade):
+            for _ in range(quantidade):
+                if self.controles.get('forward'):
+                    self.entity.position.x -= 0.5
+                if self.controles.get('jump') and self.entity.onGround:
+                    self.entity.onGround = False
+                    self.entity.position.y = 126.0
+                    self.entity.velocity.y = 0.42
+                    self.ticks_no_ar = 6
+                if not self.entity.onGround:
+                    self.ticks_no_ar -= 1
+                    if self.ticks_no_ar <= 3:
+                        self.entity.velocity.y = -0.2
+                    if self.ticks_no_ar <= 0:
+                        self.entity.onGround = True
+                        self.entity.position.y = 125.0
+                        self.entity.velocity.y = 0.0
+
+        def setControlState(self, nome, valor):
+            valor = bool(valor)
+            if (nome == 'jump' and valor
+                    and not self.controles.get('jump', False)):
+                self.saltos += 1
+            self.controles[nome] = valor
+
+    configuracao = configuracao_modulo.carregar(cenario='labirinto_parkours')
+    definicao = configuracao_modulo.trecho(configuracao, 'frente_1')
+    percurso = Percurso.carregar(
+        configuracao_modulo.caminho_mapa(configuracao, definicao), definicao)
+    bot = BotFalso()
+    ambiente = AmbienteMinecraft(bot, percurso, configuracao)
+
+    ambiente.reset()
+    informacoes = ambiente.correr_com_saltos_sincronizados()
+
+    verificador.verdadeiro(informacoes['chegou'],
+                           'saltos sincronizados chegam ao fim do corredor')
+    verificador.verdadeiro(bot.saltos > 10,
+                           'o pulo e rearmado entre subida e descida')
+    verificador.verdadeiro(not any(bot.controles.values()),
+                           'controles sincronizados sao soltos ao terminar')
+
+
 def teste_estado_dentro_dos_limites(verificador):
     """Nenhum indice de estado pode estourar o tamanho da tabela Q."""
     ambiente = montar()
@@ -121,6 +263,72 @@ def teste_estado_dentro_dos_limites(verificador):
                            f"o vetor do DQN tem {ambiente.tamanho_vetor} valores")
     verificador.verdadeiro(all(-50 <= valor <= 50 for valor in vetor),
                            "os valores do vetor estao em escala razoavel")
+
+
+def teste_estado_piso_e_acoes_restritas_do_labirinto(verificador):
+    """O cenario simples enxerga vaos sem alterar o mapa oficial."""
+    configuracao = configuracao_modulo.carregar(cenario='labirinto_parkours')
+    definicao = configuracao_modulo.trecho(configuracao, 'frente_1')
+    percurso = Percurso.carregar(
+        configuracao_modulo.caminho_mapa(configuracao, definicao), definicao)
+    ambiente = AmbienteParkour(percurso, configuracao, semente=0,
+                               randomizar=False)
+    ambiente.reset()
+    discretizador = ambiente.discretizador
+
+    verificador.verdadeiro(discretizador.modo == 'piso',
+                           'labirinto ativa o estado de piso')
+    verificador.verdadeiro(ambiente.quantidade_estados == 576,
+                           'estado de piso possui somente 576 combinacoes')
+
+    corpo = ambiente.corpo
+    estado_inicio = ambiente.observar()
+    corpo.z = 0.9
+    estado_borda = ambiente.observar()
+    corpo.no_chao = False
+    corpo.vy = 0.3
+    estado_subindo = ambiente.observar()
+    corpo.vy = -0.3
+    estado_descendo = ambiente.observar()
+
+    verificador.verdadeiro(estado_inicio != estado_borda,
+                           'meio e borda do bloco sao estados diferentes')
+    verificador.verdadeiro(estado_borda != estado_subindo,
+                           'chao e subida sao estados diferentes')
+    verificador.verdadeiro(estado_subindo != estado_descendo,
+                           'subida e descida sao estados diferentes')
+
+    parametros = configuracao_modulo.parametros_q_learning(configuracao)
+    agente = AgenteQLearning(ambiente.quantidade_estados,
+                             ambiente.quantidade_acoes, parametros, semente=0)
+    escolhas = {agente.escolher(estado_inicio) for _ in range(100)}
+    verificador.verdadeiro(escolhas <= {1, 2} and escolhas == {1, 2},
+                           'Q explora somente correr e correr_pulo')
+    agente.modo_avaliacao()
+    agente.tabela[estado_inicio][9] = 999.0
+    verificador.verdadeiro(agente.escolher(estado_inicio) in {1, 2},
+                           'Q guloso ignora acao proibida mesmo se ela vale mais')
+    agente.tabela[estado_inicio][1] = 0.0
+    agente.tabela[estado_inicio][2] = 0.0
+    agente.tabela[estado_borda][1] = 2.0
+    agente.tabela[estado_borda][2] = 3.0
+    agente.tabela[estado_borda][9] = 999.0
+    agente.aprender(estado_inicio, 1, 0.0, estado_borda, False)
+    esperado = agente.taxa_aprendizado * agente.desconto * 3.0
+    verificador.perto(agente.tabela[estado_inicio][1], esperado, 1e-9,
+                      'Bellman usa somente o melhor futuro permitido')
+
+    oficial = configuracao_modulo.carregar()
+    ambiente_oficial = montar()
+    agente_oficial = AgenteQLearning(
+        ambiente_oficial.quantidade_estados,
+        ambiente_oficial.quantidade_acoes,
+        configuracao_modulo.parametros_q_learning(oficial), semente=0)
+    verificador.verdadeiro(ambiente_oficial.discretizador.modo == 'mascara',
+                           'mapa oficial preserva o estado mascara')
+    verificador.verdadeiro(
+        agente_oficial.acoes_permitidas == tuple(range(acoes.QUANTIDADE)),
+        'mapa oficial preserva todas as dez acoes')
 
 
 def teste_recompensa_segue_o_progresso(verificador):
@@ -317,8 +525,25 @@ def teste_cenarios_e_direcoes(verificador):
                            'cenario do labirinto usa o mundo correto')
     verificador.verdadeiro(percurso.transformacao.nome_direcao == '-X',
                            'frente_1 transforma -X em progresso positivo')
+    verificador.perto(percurso.comprimento(), 53.0, 1e-9,
+                      'frente_1 usa as coordenadas atualizadas')
+    verificador.verdadeiro(
+        AgenteGuloso().escolher(ambiente.observar(), ambiente) == 2,
+        'guloso mantem correr_pulo no corredor simples')
     verificador.verdadeiro(informacoes['chegou'],
                            'correr e pular para frente conclui o treino simples')
+
+    definicao_2 = configuracao_modulo.trecho(configuracao, 'frente_2')
+    percurso_2 = Percurso.carregar(
+        configuracao_modulo.caminho_mapa(configuracao, definicao_2), definicao_2)
+    alturas_2 = [altura for z in range(percurso_2.z_inicio, percurso_2.z_meta + 1)
+                 for altura, _ in percurso_2.superficies_em(z)]
+    verificador.verdadeiro(percurso_2.transformacao.nome_direcao == '-X',
+                           'frente_2 transforma -X em progresso positivo')
+    verificador.perto(percurso_2.comprimento(), 53.0, 1e-9,
+                      'frente_2 usa as coordenadas atualizadas')
+    verificador.verdadeiro(max(alturas_2) > percurso_2.y_pe,
+                           'frente_2 preserva os apoios em alturas diferentes')
 
 
 def main():

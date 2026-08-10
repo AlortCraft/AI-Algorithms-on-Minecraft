@@ -3,12 +3,12 @@
 ## O problema que esta camada resolve
 
 O parkour oficial avança em `+Z`. O primeiro treino construído dentro de
-`world_labirinto` começa em `(87, 125, 74)` e termina em `(35, 125, 74)`, ou
+`world_labirinto` começa em `(87, 125, 74)` e termina em `(34, 125, 74)`, ou
 seja, avança em `-X`.
 
 Antes desta mudança, o programa usava `z_depois - z_antes` como progresso em
 todos os lugares. No treino do labirinto, Z permanece em 74. O bot podia andar
-52 blocos em X e ainda seria registrado como parado. O estado também procurava
+53 blocos em X e ainda seria registrado como parado. O estado também procurava
 obstáculos em `z + 1`, na direção errada.
 
 A solução não é duplicar os agentes. É converter o mundo para um sistema local
@@ -48,7 +48,7 @@ Escolhe o mundo e os trechos:
 
 Um trecho em direção arbitrária usa `inicio` e `fim`, em vez de `z_inicio` e
 `z_meta`. Ele também pode indicar seu próprio arquivo `mapa`, o que permite que
-cada um dos três parkours simples tenha uma exportação independente.
+cada parkour simples tenha uma exportação independente.
 
 ### `src/parkour/config.py`
 
@@ -81,9 +81,13 @@ Também guarda o nome dos blocos, usado depois para conferir o JSON contra o
 Minecraft ao vivo.
 
 No primeiro treino, a leitura encontrou uma pista de um bloco de largura em
-`z_mundo=74`. Há apoio em 28 das 53 posições: depois das plataformas de início,
-os blocos verdes aparecem alternados com vãos. Portanto, “só para frente” ainda
+`z_mundo=74`. Os blocos verdes aparecem alternados com vãos depois das
+plataformas de início. Portanto, “só para frente” ainda
 exige a ação de correr e pular; não é um piso contínuo.
+
+O segundo treino avança pela linha `z_mundo=56`. Como seus apoios sobem e
+descem, o mapeador procura a coluna lateral recorrente em todas as alturas,
+em vez de exigir que quase metade dos blocos esteja no nível inicial.
 
 ### `src/parkour/percurso.py`
 
@@ -170,20 +174,24 @@ python -m src.parkour.main --cenario parkour_oficial
 O PaperMC deve estar parado ao trocar `level-name`. Se o cenário e o
 `server.properties` local discordarem, o programa encerra com uma explicação.
 
-## Como cadastrar os outros dois treinos
+## Percursos cadastrados
 
-Para cada percurso ainda faltam início e fim. Com o servidor encerrado por
-`stop`, exporte:
+Os dois percursos usam os pés em `y=125` e avançam em `-X`:
+
+- `frente_1`: `(87, 125, 74)` até `(34, 125, 74)`;
+- `frente_2`: `(87, 125, 56)` até `(34, 125, 56)`.
+
+Para reexportar o segundo depois de uma mudança no mundo, encerre o servidor
+com `stop` e execute:
 
 ```powershell
 python -m tools.mapear_percurso `
   --mundo Servidor-BOT/world_labirinto `
-  --inicio X_INICIO Y_INICIO Z_INICIO `
-  --fim X_FIM Y_FIM Z_FIM `
+  --inicio 87 125 56 `
+  --fim 34 125 56 `
   --saida config/mapas/world_labirinto_frente_2.json `
   --perfil
 ```
 
-Depois acrescente `frente_2` a `config/cenarios/labirinto_parkours.json`. Não se
-deve reutilizar o JSON de `frente_1`: cada exportação guarda e valida suas
-próprias coordenadas.
+Não se deve reutilizar o JSON de `frente_1`: cada exportação guarda e valida
+suas próprias coordenadas.

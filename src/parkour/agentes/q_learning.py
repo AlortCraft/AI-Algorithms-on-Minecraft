@@ -9,8 +9,10 @@ recompensa recebida agora mais o melhor valor possivel do estado seguinte. A
 diferenca entre o que a tabela dizia e essa conta e o erro; `alfa` diz o
 quanto corrigir de cada vez.
 
-A tabela e uma lista de listas de Python puro, sem numpy: sao 3840 estados por
-6 acoes, uns 23 mil numeros. Numpy so passa a valer a pena no DQN.
+A tabela e uma lista de listas de Python puro, sem numpy. O tamanho depende do
+modo de estado e do catalogo de acoes; numpy so passa a valer a pena no DQN.
+Um cenario pode restringir as acoes que o Q explora sem mudar os indices do
+catalogo global, mantendo modelos e ambiente Minecraft compativeis.
 
 Exploracao: comeca sorteando quase sempre e vai confiando cada vez mais na
 tabela. A pag. 2 do PDF chama isso de exploracao versus aproveitamento, e pede
@@ -40,6 +42,18 @@ class AgenteQLearning(Agente):
         self.exploracao_final = parametros.get('exploracao_final', 0.05)
         self.decaimento = parametros.get('exploracao_decaimento', 0.999)
 
+        permitidas = parametros.get('acoes_permitidas')
+        if permitidas is None:
+            permitidas = range(quantidade_acoes)
+        self.acoes_permitidas = tuple(dict.fromkeys(permitidas))
+        if not self.acoes_permitidas:
+            raise ValueError('acoes_permitidas nao pode ficar vazia')
+        if any(not isinstance(acao, int) or acao < 0
+               or acao >= quantidade_acoes
+               for acao in self.acoes_permitidas):
+            raise ValueError(
+                f'acoes_permitidas devem estar entre 0 e {quantidade_acoes - 1}')
+
         self.sorteador = random.Random(semente)
         self.tabela = [[0.0] * quantidade_acoes for _ in range(quantidade_estados)]
         self.visitas = [0] * quantidade_estados
@@ -48,15 +62,16 @@ class AgenteQLearning(Agente):
 
     def escolher(self, estado, ambiente=None):
         if self.sorteador.random() < self.exploracao:
-            return self.sorteador.randrange(self.quantidade_acoes)
+            return self.sorteador.choice(self.acoes_permitidas)
         return self._melhor_acao(estado)
 
     def _melhor_acao(self, estado):
         valores = self.tabela[estado]
-        melhor = max(valores)
+        melhor = max(valores[acao] for acao in self.acoes_permitidas)
         # Desempate sorteado: sem isso, no comeco (tabela toda zerada) o agente
         # escolheria sempre a acao 0 e nunca veria as outras.
-        empatadas = [acao for acao, valor in enumerate(valores) if valor == melhor]
+        empatadas = [acao for acao in self.acoes_permitidas
+                     if valores[acao] == melhor]
         if len(empatadas) == 1:
             return empatadas[0]
         return self.sorteador.choice(empatadas)
@@ -66,7 +81,9 @@ class AgenteQLearning(Agente):
 
         alvo = recompensa
         if not terminou:
-            alvo += self.desconto * max(self.tabela[proximo_estado])
+            melhor_futuro = max(self.tabela[proximo_estado][acao]
+                                for acao in self.acoes_permitidas)
+            alvo += self.desconto * melhor_futuro
 
         erro = alvo - self.tabela[estado][acao]
         self.tabela[estado][acao] += self.taxa_aprendizado * erro
@@ -90,6 +107,7 @@ class AgenteQLearning(Agente):
                 'taxa_aprendizado': self.taxa_aprendizado,
                 'desconto': self.desconto,
                 'exploracao': self.exploracao,
+                'acoes_permitidas': list(self.acoes_permitidas),
                 'tabela': self.tabela,
                 'visitas': self.visitas,
             }, arquivo)
@@ -102,6 +120,16 @@ class AgenteQLearning(Agente):
                 f"a tabela salva tem {dados['quantidade_estados']} estados e o "
                 f"ambiente atual tem {self.quantidade_estados}. Ela foi treinada "
                 f"com outra configuracao de estado e nao pode ser reaproveitada.")
+        if dados.get('quantidade_acoes', self.quantidade_acoes) != self.quantidade_acoes:
+            raise SystemExit(
+                f"a tabela salva tem {dados['quantidade_acoes']} acoes e o "
+                f"ambiente atual tem {self.quantidade_acoes}.")
+        acoes_salvas = dados.get('acoes_permitidas')
+        if (acoes_salvas is not None
+                and tuple(acoes_salvas) != self.acoes_permitidas):
+            raise SystemExit(
+                f"a tabela salva usa as acoes {acoes_salvas}, mas a "
+                f"configuracao atual usa {list(self.acoes_permitidas)}.")
         self.tabela = dados['tabela']
         self.visitas = dados.get('visitas', [0] * self.quantidade_estados)
         self.exploracao = dados.get('exploracao', 0.0)
@@ -112,4 +140,5 @@ class AgenteQLearning(Agente):
             'exploracao': round(self.exploracao, 4),
             'estados_visitados': visitados,
             'cobertura': round(visitados / self.quantidade_estados, 4),
+            'acoes_permitidas': list(self.acoes_permitidas),
         }

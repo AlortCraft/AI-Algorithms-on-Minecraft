@@ -164,3 +164,11 @@ def rotulo_modelo(configuracao, nome_trecho):
     """Evita carregar uma tabela Q de outro mundo com o mesmo nome de trecho."""
     cenario = configuracao.get('cenario')
     return f'{cenario}_{nome_trecho}' if cenario else nome_trecho
+
+
+def parametros_q_learning(configuracao):
+    """Parametros do Q mais restricoes opcionais especificas do cenario."""
+    parametros = dict(configuracao.get('q_learning', {}))
+    if 'acoes_q_learning' in configuracao:
+        parametros['acoes_permitidas'] = configuracao['acoes_q_learning']
+    return parametros

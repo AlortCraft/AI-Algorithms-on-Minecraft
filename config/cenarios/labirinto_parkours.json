@@ -1,21 +1,32 @@
 {
   "_comentario": [
     "Treinos simples construidos dentro de world_labirinto.",
-    "Somente frente_1 esta cadastrado porque so suas coordenadas foram",
-    "confirmadas. Os outros dois devem ganhar seus proprios inicio, fim e",
-    "JSON exportado, sem inventar coordenadas."
+    "Os dois percursos foram exportados diretamente do mundo salvo.",
+    "Ambos avancam em -X, mas frente_2 possui apoios em alturas diferentes."
   ],
   "mundo": "world_labirinto",
   "trechos": {
     "frente_1": {
-      "_nota": "Linha de blocos alternados: avanca 52 blocos em -X.",
+      "_nota": "Linha de blocos alternados: avanca 53 blocos em -X.",
       "mapa": "config/mapas/world_labirinto_frente_1.json",
       "inicio": {"x": 87, "y": 125, "z": 74},
-      "fim": {"x": 35, "y": 125, "z": 74},
+      "fim": {"x": 34, "y": 125, "z": 74},
+      "y_pe": 125
+    },
+    "frente_2": {
+      "_nota": "Parkour com apoios em alturas diferentes: avanca 53 blocos em -X.",
+      "mapa": "config/mapas/world_labirinto_frente_2.json",
+      "inicio": {"x": 87, "y": 125, "z": 56},
+      "fim": {"x": 34, "y": 125, "z": 56},
       "y_pe": 125
     }
   },
   "trecho_padrao": "frente_1",
+  "estado": {
+    "_nota": "O desafio deste cenario sao os vaos no piso, nao paredes laterais.",
+    "modo": "piso"
+  },
+  "acoes_q_learning": [1, 2],
   "episodio": {
     "_nota": "A pista tem um bloco de largura; variar lateralmente o nascimento pode colocar o corpo quase fora da borda.",
     "ticks_por_acao": 4,
