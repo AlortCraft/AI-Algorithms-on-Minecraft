@@ -20,7 +20,7 @@ celulas vizinhas**: a folga entre eles e 0.81. Sem modelar isso, trechos
 inteiros do estagio Bamboo pareceriam intransponiveis, e nao sao.
 
 A lista A_VALIDAR reune os blocos cuja caixa aqui e um palpite documentado e
-precisa ser confirmada dentro do jogo. Ver docs/sim_para_real.md.
+precisa ser confirmada dentro do jogo. Ver docs/PARTES_PARA_IMPLEMENTAR.md.
 """
 
 LARGURA_CHEIA = 1.0
@@ -85,11 +85,11 @@ SUFIXOS_COM_CAIXA = (
 # Blocos cuja caixa acima e um palpite documentado, nao um fato verificado.
 A_VALIDAR = {
     'bamboo': 'haste fina de 3/16; e o que torna o estagio Bamboo transponivel',
-    'big_dripleaf': 'a folha inclina e derruba; o simulador nao modela isso',
+    'big_dripleaf': 'a folha inclina; o mapa estatico nao acompanha esse estado',
     'big_dripleaf_stem': 'caule sem colisao, mas apoia quando a folha esta acima',
-    'ladder': 'escalavel; o simulador nao modela escalada',
-    'slime_block': 'quica; o simulador trata como bloco cheio comum',
-    'cactus': 'causa dano ao encostar; o simulador so trata a colisao',
+    'ladder': 'escalavel; o estado discreto nao informa a escalada',
+    'slime_block': 'quica; o mapa registra apenas sua forma',
+    'cactus': 'causa dano ao encostar; o mapa registra apenas sua forma',
     'bamboo_trapdoor': 'alcapao aberto ou fechado muda a colisao',
     'honey_block': 'gruda e reduz a velocidade',
     'cobweb': 'reduz muito a velocidade',

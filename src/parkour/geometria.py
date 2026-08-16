@@ -1,12 +1,8 @@
 """Geometria do corredor: onde o jogador cabe e onde nao cabe.
 
-Este modulo e usado por dois lados que precisam concordar entre si:
-
-- tools/mapear_mundo.py, ao exportar e conferir o mapa;
-- o simulador, ao decidir colisoes durante o treino.
-
-Manter a definicao num lugar so evita que a ferramenta diga que um trecho e
-transponivel e o simulador ache que nao e.
+Este modulo e usado pelas ferramentas de exportacao e pelo estado discreto.
+Manter a definicao num lugar so faz o mapa exportado e a observacao do bot
+concordarem sobre onde existe passagem.
 """
 
 # Medidas do jogador no Minecraft Java Edition.

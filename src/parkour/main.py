@@ -1,402 +1,501 @@
-"""O bot de parkour dentro do Minecraft.
+"""Conecta varios bots a uma unica tabela de Q-Learning no Minecraft.
 
-Conecta no servidor e escuta comandos no chat. **Nao e aqui que o treino
-acontece**: o servidor roda a 20 ticks por segundo, o que da umas 5 decisoes
-por segundo. O treino roda no simulador, com Python puro:
+Exemplo:
 
-    python -m src.parkour.experimento --agente q --episodios 4000
-
-Este arquivo serve para validar: conferir que a fisica simulada bate com a do
-jogo, e rodar no jogo a politica treinada offline.
-
-Antes de rodar:
-
-1. copie config/bot.json.exemplo para config/bot.json e ajuste host e usuario;
-2. suba o servidor e espere a mensagem `Done`;
-3. no console do servidor, rode `op <usuario>` (sem a barra). Sem isso o /tp
-   do reset nao funciona e nenhum episodio comeca.
-
-    python -m src.parkour.main
+    python -m src.parkour.main --cenario labirinto_parkours --bots 4
 
 Comandos no chat:
 
-    parkour ajuda        lista os comandos
-    parkour info         mostra o trecho carregado e a posicao do bot
-    parkour teste        anda cinco blocos e para
-    parkour reset        teleporta para o inicio do trecho
-    parkour marcar       grava a posicao do jogador, para ajustar o trecho
-    parkour calibrar     roda a sequencia fixa e grava a trajetoria real
-    parkour guloso       roda a politica gulosa (nao aprende, so confere)
-    parkour demonstrar   pathfinder lento, com saltos mais visiveis
-    parkour rodar        roda a politica treinada offline
-    parkour parar        interrompe o que estiver rodando
+    parkour ajuda | info | reset | rodar | treinar N | parar
 """
 
 import argparse
-import json
 import os
+import re
+import signal
 import threading
+import time
 import traceback
 
-from . import acoes as catalogo_acoes
-from . import calibracao
-from . import config as configuracao_modulo
-from .agentes.guloso import AgenteGuloso
-from .agentes.q_learning import AgenteQLearning
+from . import acoes, config as configuracao_modulo
 from .ambiente_mc import AmbienteMinecraft
 from .percurso import Percurso
+from .treinar import (acrescentar_resultado, caminho_padrao_modelo,
+                      caminho_resultados, criar_agente, rodar_episodio)
 
 
-class BotParkour:
-    def __init__(self, cenario=None, nome_trecho=None):
-        self.configuracao = configuracao_modulo.carregar(cenario=cenario)
-        self.dados_bot = configuracao_modulo.carregar_bot()
-        configuracao_modulo.validar_mundo_local(self.configuracao, self.dados_bot)
+NOME_EQUIPE = 'bots_parkour'
 
-        definicao = configuracao_modulo.trecho(self.configuracao, nome_trecho)
-        self.percurso = Percurso.carregar(
-            configuracao_modulo.caminho_mapa(self.configuracao, definicao), definicao)
 
-        print("Inicializando o bot de parkour...")
-        print(f"  cenario: {self.configuracao.get('cenario', 'padrao')}")
-        print(f"  {self.percurso.resumo()}")
+def nomes_dos_bots(nome_base, quantidade):
+    """Mantem o primeiro nome e cria sufixos dentro do limite de 16 caracteres."""
+    if quantidade < 1:
+        raise ValueError('a quantidade de bots deve ser positiva')
+    nomes = []
+    for numero in range(1, quantidade + 1):
+        sufixo = '' if numero == 1 else str(numero)
+        nome = nome_base[:16 - len(sufixo)] + sufixo
+        if not nome or nome in nomes:
+            raise ValueError('nao foi possivel criar nomes unicos para os bots')
+        nomes.append(nome)
+    return nomes
 
-        # A ponte so e necessaria para conectar. Importa-la aqui permite usar
-        # --listar-cenarios e outras operacoes offline sem instalar Mineflayer.
-        from javascript import require
-        self.mineflayer = require('mineflayer')
-        self.vec3 = require('vec3')
-        self.bot = self.mineflayer.createBot({
-            'host': self.dados_bot['host'],
-            'port': self.dados_bot['porta'],
-            'username': self.dados_bot['usuario'],
-            'hideErrors': self.dados_bot.get('esconder_erros', False),
+
+class AtorMinecraft:
+    """Um bot que coleta experiencias para a tabela compartilhada."""
+
+    def __init__(self, grupo, nome, mineflayer):
+        self.grupo = grupo
+        self.nome = nome
+        dados = grupo.dados_bot
+        self.bot = mineflayer.createBot({
+            'host': dados['host'],
+            'port': dados['porta'],
+            'username': nome,
+            'hideErrors': dados.get('esconder_erros', False),
         })
-        caminho_ponte = os.path.join(os.path.dirname(__file__),
-                                     'pathfinder_bridge.js').replace('\\', '/')
-        self.pathfinder_ponte = require(caminho_ponte)
-        self.pathfinder_ponte.instalar(self.bot)
-
         self.ambiente = None
-        self.tarefa = None
-        self.parar_pedido = threading.Event()
-
-    # ------------------------------------------------------------------
+        self.pronto = threading.Event()
 
     def preparar_ambiente(self):
         if self.ambiente is None:
-            self.ambiente = AmbienteMinecraft(self.bot, self.percurso,
-                                              self.configuracao, self.vec3)
+            self.ambiente = AmbienteMinecraft(
+                self.bot,
+                self.grupo.percurso,
+                self.grupo.configuracao,
+                emissor_comandos=self.grupo.executar_comando,
+            )
         return self.ambiente
 
-    def falar(self, texto):
-        print(texto)
-        self.bot.chat(texto)
+    def soltar_controles(self):
+        if self.ambiente is not None:
+            self.ambiente.soltar_controles()
 
-    def em_segundo_plano(self, funcao, *argumentos):
-        """Roda uma tarefa longa fora do laco de eventos.
 
-        Sem isto, um treino ou uma corrida travaria o tratamento do chat e nem
-        daria para mandar `parkour parar`.
-        """
-        if self.tarefa is not None and self.tarefa.is_alive():
-            self.falar("ja tem algo rodando. Use: parkour parar")
+class GrupoParkour:
+    """Coordena os atores e mantem uma unica tabela Q em memoria."""
+
+    def __init__(self, cenario, nome_trecho=None, caminho_modelo=None,
+                 quantidade_bots=None):
+        self.configuracao = configuracao_modulo.carregar(cenario=cenario)
+        self.dados_bot = configuracao_modulo.carregar_bot()
+        configuracao_modulo.validar_mundo_local(
+            self.configuracao, self.dados_bot
+        )
+        self.definicao = configuracao_modulo.trecho(
+            self.configuracao, nome_trecho
+        )
+        self.percurso = Percurso.carregar(
+            configuracao_modulo.caminho_mapa(
+                self.configuracao, self.definicao
+            ),
+            self.definicao,
+        )
+        self.caminho_modelo = (
+            configuracao_modulo.caminho_absoluto(caminho_modelo)
+            if caminho_modelo else caminho_padrao_modelo(
+                self.configuracao, self.definicao['nome']
+            )
+        )
+
+        quantidade = quantidade_bots
+        if quantidade is None:
+            quantidade = self.dados_bot.get('quantidade_bots', 4)
+        if not 1 <= quantidade <= 200:
+            raise ValueError('use entre 1 e 200 bots')
+
+        from javascript import require
+        mineflayer = require('mineflayer')
+        nomes = nomes_dos_bots(self.dados_bot['usuario'], quantidade)
+        # Evita uma tempestade de login, chunks e pacotes quando dezenas de
+        # clientes Mineflayer entram no mesmo tick do servidor.
+        intervalo = float(self.dados_bot.get('intervalo_conexao', 0.05))
+        self.atores = []
+        for indice, nome in enumerate(nomes):
+            self.atores.append(AtorMinecraft(self, nome, mineflayer))
+            if indice + 1 < len(nomes) and intervalo > 0:
+                time.sleep(intervalo)
+        self.controlador = self.atores[0]
+
+        self.agente = None
+        self.bloqueio_agente = threading.Lock()
+        self.bloqueio_persistencia = threading.Lock()
+        self.bloqueio_comandos = threading.Lock()
+        self.bloqueio_resultados = threading.Lock()
+        self.parar_pedido = threading.Event()
+        self.encerrado = threading.Event()
+        self.tarefa = None
+        self.colisao_preparada = False
+
+    def registrar_eventos(self, On):
+        for ator in self.atores:
+            self._registrar_eventos_do_ator(ator, On)
+        self._registrar_comandos(On)
+        # Em localhost o primeiro bot pode concluir o login enquanto os demais
+        # ainda estao sendo criados, antes de os eventos serem registrados.
+        # Nesse caso nao chega um novo `spawn`; a entidade ja existente e a
+        # confirmacao equivalente.
+        for ator in self.atores:
+            if getattr(ator.bot, 'entity', None) is not None:
+                self._marcar_como_pronto(ator)
+
+    def _registrar_eventos_do_ator(self, ator, On):
+        @On(ator.bot, 'spawn')
+        def ao_nascer(*_):
+            self._marcar_como_pronto(ator)
+
+        @On(ator.bot, 'end')
+        def ao_sair(*argumentos):
+            ator.pronto.clear()
+            motivo = next(
+                (item for item in reversed(argumentos)
+                 if isinstance(item, str)), ''
+            )
+            detalhe = f': {motivo}' if motivo else ''
+            print(f'[{ator.nome}] desconectado{detalhe}')
+
+        @On(ator.bot, 'kicked')
+        def ao_ser_expulso(*argumentos):
+            motivo = next(
+                (item for item in reversed(argumentos)
+                 if isinstance(item, str)), 'motivo nao informado'
+            )
+            print(f'[{ator.nome}] expulso pelo servidor: {motivo}')
+
+        @On(ator.bot, 'error')
+        def ao_erro(*argumentos):
+            detalhes = [str(item) for item in argumentos[1:]]
+            print(f'[{ator.nome}] erro de conexao: '
+                  f'{"; ".join(detalhes) or "nao informado"}')
+
+    def _marcar_como_pronto(self, ator):
+        """Registra login uma vez; `spawn` tambem ocorre apos morte/respawn."""
+        if ator.pronto.is_set():
             return
+        ator.pronto.set()
+        print(f'[{ator.nome}] conectado')
+        self._preparar_equipe(ator)
+        if ator is self.controlador:
+            self.falar(
+                f'Q-Learning pronto com {len(self.atores)} bots. '
+                'Digite parkour ajuda'
+            )
 
+    def _registrar_comandos(self, On):
+        bot = self.controlador.bot
+
+        @On(bot, 'messagestr')
+        def ao_ouvir(*argumentos):
+            mensagem = next(
+                (item for item in argumentos[:2] if isinstance(item, str)), ''
+            )
+            texto = mensagem.strip().lower()
+            falas_dos_bots = (f'<{ator.nome}>'.lower() for ator in self.atores)
+            if ('parkour' not in texto
+                    or any(nome in texto for nome in falas_dos_bots)):
+                return
+
+            if 'ajuda' in texto:
+                self.falar('parkour info | reset | rodar | treinar N | parar')
+            elif 'parar' in texto:
+                self.comando_parar()
+            elif 'info' in texto:
+                self.executar_em_segundo_plano(self.comando_info)
+            elif 'reset' in texto:
+                self.executar_em_segundo_plano(self.comando_reset)
+            elif 'treinar' in texto:
+                encontrado = re.search(r'parkour\s+treinar\s+(\d+)', texto)
+                if encontrado:
+                    self.executar_em_segundo_plano(
+                        self.comando_treinar, int(encontrado.group(1))
+                    )
+                else:
+                    self.falar('use: parkour treinar RODADAS_POR_BOT')
+            elif 'rodar' in texto:
+                self.executar_em_segundo_plano(self.comando_rodar)
+
+    def _preparar_equipe(self, ator):
+        if not self.dados_bot.get('sem_colisao', True):
+            return
+        if not self.controlador.pronto.is_set():
+            return
+        with self.bloqueio_comandos:
+            if not self.colisao_preparada:
+                # O primeiro comando pode avisar que a equipe ja existe; os
+                # seguintes continuam validos e tornam a operacao repetivel.
+                self.controlador.bot.chat(f'/team add {NOME_EQUIPE}')
+                self.controlador.bot.chat(
+                    f'/team modify {NOME_EQUIPE} collisionRule never'
+                )
+                self.controlador.bot.chat(
+                    f'/team modify {NOME_EQUIPE} friendlyFire false'
+                )
+                self.controlador.bot.chat('/gamerule maxEntityCramming 0')
+                self.colisao_preparada = True
+                for candidato in self.atores:
+                    if candidato.pronto.is_set():
+                        self.controlador.bot.chat(
+                            f'/team join {NOME_EQUIPE} {candidato.nome}'
+                        )
+            else:
+                self.controlador.bot.chat(
+                    f'/team join {NOME_EQUIPE} {ator.nome}'
+                )
+
+    def executar_comando(self, comando):
+        if not self.controlador.pronto.is_set():
+            raise RuntimeError('o bot controlador esta desconectado')
+        with self.bloqueio_comandos:
+            self.controlador.bot.chat(comando)
+
+    def atores_prontos(self):
+        return [ator for ator in self.atores if ator.pronto.is_set()]
+
+    def falar(self, mensagem):
+        texto = str(mensagem)[:250]
+        print(texto)
+        if self.controlador.pronto.is_set():
+            self.controlador.bot.chat(texto)
+
+    def executar_em_segundo_plano(self, funcao, *argumentos):
+        if self.tarefa is not None and self.tarefa.is_alive():
+            self.falar('ja existe uma tarefa em andamento; use parkour parar')
+            return
         self.parar_pedido.clear()
 
-        def embrulho():
+        def executar():
             try:
                 funcao(*argumentos)
-            except Exception:
+            except Exception as erro:
                 traceback.print_exc()
-                self.falar("deu erro; veja o console do Python")
+                self.falar(f'erro: {erro}')
             finally:
-                if self.ambiente is not None:
-                    self.ambiente.soltar_controles()
+                for ator in self.atores:
+                    ator.soltar_controles()
 
-        self.tarefa = threading.Thread(target=embrulho, daemon=True)
+        self.tarefa = threading.Thread(target=executar, daemon=True)
         self.tarefa.start()
 
-    # ------------------------------------------------------------------
-    # comandos
-
-    def comando_ajuda(self):
-        for linha in ("parkour info / teste / reset / marcar / verificar",
-                      "parkour calibrar | guloso | demonstrar | rodar | parar"):
-            self.falar(linha)
+    def _obter_agente(self, criar_se_ausente=False):
+        with self.bloqueio_agente:
+            if self.agente is not None:
+                return self.agente
+            prontos = self.atores_prontos()
+            if not prontos:
+                raise RuntimeError('nenhum bot terminou de conectar')
+            ambiente = prontos[0].preparar_ambiente()
+            agente = criar_agente(ambiente, self.configuracao)
+            if os.path.isfile(self.caminho_modelo):
+                agente.carregar(self.caminho_modelo)
+                if agente.acoes_adicionadas_ao_carregar:
+                    nomes = ', '.join(
+                        acoes.nome_de(indice)
+                        for indice in agente.acoes_adicionadas_ao_carregar
+                    )
+                    self.falar(
+                        f'modelo migrado: acao adicionada ({nomes}); '
+                        f'epsilon reativado em {agente.exploracao:.2f}. '
+                        f'Backup: {os.path.basename(agente.backup_migracao)}'
+                    )
+            elif not criar_se_ausente:
+                relativo = os.path.relpath(
+                    self.caminho_modelo, configuracao_modulo.RAIZ
+                )
+                raise FileNotFoundError(
+                    f'tabela Q nao encontrada: {relativo}. Use primeiro '
+                    '`parkour treinar N` dentro do jogo.'
+                )
+            self.agente = agente
+            return agente
 
     def comando_info(self):
-        ambiente = self.preparar_ambiente()
-        corpo = ambiente.corpo
-        mundo_x, mundo_y, mundo_z = corpo.posicao_mundo
-        self.falar(f"{self.percurso.resumo()}")
-        self.falar(f"mundo x={mundo_x:.2f} y={mundo_y:.2f} z={mundo_z:.2f}")
-        self.falar(f"local lateral={corpo.x:.2f} altura={corpo.y:.2f} "
-                   f"progresso={corpo.z:.2f} "
-                   f"no_chao={corpo.no_chao}")
-        self.falar(f"estado={ambiente.observar()} de {ambiente.quantidade_estados}")
-
-    def comando_teste(self):
-        """Anda cinco blocos. E o primeiro teste de que a ponte funciona."""
-        ambiente = self.preparar_ambiente()
-        progresso_inicial = ambiente.corpo.z
-        self.falar("andando cinco blocos...")
-        ambiente.aplicar(catalogo_acoes.entradas_de(0))
-        for _ in range(100):
-            if (ambiente.corpo.z - progresso_inicial >= 5.0
-                    or self.parar_pedido.is_set()):
-                break
-            ambiente.esperar_ticks(2)
-        ambiente.soltar_controles()
-        self.falar(f"avancou {ambiente.corpo.z - progresso_inicial:.2f} blocos")
+        prontos = self.atores_prontos()
+        modelo = 'pronto' if os.path.isfile(self.caminho_modelo) else 'ausente'
+        diagnostico = self.agente.diagnostico() if self.agente else None
+        epsilon = (f", epsilon={diagnostico['exploracao']:.3f}"
+                   if diagnostico else '')
+        self.falar(
+            f"trecho={self.definicao['nome']}, bots={len(prontos)}/"
+            f'{len(self.atores)}, modelo={modelo}{epsilon}'
+        )
 
     def comando_reset(self):
-        ambiente = self.preparar_ambiente()
-        ambiente.reset()
-        mundo_x, _, mundo_z = ambiente.corpo.posicao_mundo
-        self.falar(f"no inicio: mundo x={mundo_x:.2f} z={mundo_z:.2f}; "
-                   f"progresso={ambiente.corpo.z:.2f}")
+        if not self.controlador.pronto.is_set():
+            raise RuntimeError('aguarde o bot controlador terminar de conectar')
+        prontos = self.atores_prontos()
+        if not prontos:
+            raise RuntimeError('nenhum bot esta conectado')
+        erros = []
 
-    def comando_verificar(self):
-        """Confere se o JSON selecionado descreve os blocos do mundo aberto."""
-        ambiente = self.preparar_ambiente()
-        ambiente.reset()
-        resultado = ambiente.verificar_geometria()
-        if resultado['aviso']:
-            self.falar(f"nao foi possivel verificar: {resultado['aviso']}")
-            return
-        diferencas = resultado['diferencas']
-        if not diferencas:
-            self.falar(f"mapa conferido: {resultado['verificados']} blocos coincidem")
-            return
-        self.falar(f"ERRO DE MAPA: {len(diferencas)} de "
-                   f"{resultado['verificados']} amostras diferem")
-        for diferenca in diferencas[:3]:
-            self.falar(f"em {diferenca['mundo']}: esperado "
-                       f"{diferenca['esperado']}, obtido {diferenca['obtido']}")
+        def resetar(ator):
+            try:
+                ator.preparar_ambiente().reset()
+            except Exception as erro:
+                erros.append(f'{ator.nome}: {erro}')
 
-    def comando_marcar(self, nome_jogador):
-        """Grava a posicao do jogador, para reconfigurar o trecho sem o F3."""
-        jogador = self.bot.players[nome_jogador]
-        if jogador is None or jogador.entity is None:
-            self.falar(f"nao consigo ver {nome_jogador}; chegue mais perto")
-            return
-
-        posicao = jogador.entity.position
-        marca = {'x': float(posicao.x), 'y': float(posicao.y), 'z': float(posicao.z)}
-        destino = os.path.join(configuracao_modulo.RAIZ, 'resultados', 'marcas.json')
-        os.makedirs(os.path.dirname(destino), exist_ok=True)
-
-        marcas = []
-        if os.path.exists(destino):
-            with open(destino, encoding='utf-8') as arquivo:
-                marcas = json.load(arquivo)
-        marcas.append(marca)
-        with open(destino, 'w', encoding='utf-8') as arquivo:
-            json.dump(marcas, arquivo, indent=2)
-
-        self.falar(f"marcado x={marca['x']:.2f} y={marca['y']:.2f} z={marca['z']:.2f}")
-
-    def comando_calibrar(self):
-        """Grava a trajetoria real para comparar com o simulador.
-
-        Roda na pista lisa descrita no config, e nao no percurso. Medir fisica
-        em cima de obstaculo mede colisao: na primeira tentativa em jogo o bot
-        parou no pilar de z=1004 no tick 24 e os 128 ticks seguintes nao
-        mediram nada. Ver docs/sim_para_real.md.
-        """
-        calibracao_config = self.configuracao.get('calibracao', {})
-        if not calibracao_config.get('disponivel', True):
-            self.falar("este cenario nao possui pista de calibracao")
-            return
-        ambiente = self.preparar_ambiente()
-        pista = calibracao_config['pista']
-        origem = ((pista['x_min'] + pista['x_max'] + 1) / 2.0,
-                  float(pista['y_piso'] + 1),
-                  pista['z_inicio'] + 0.5)
-        self.falar(f"gravando {len(calibracao.SEQUENCIA_PADRAO)} acoes "
-                   f"na pista lisa (z {pista['z_inicio']}..{pista['z_meta']})...")
-
-        amostras = ambiente.gravar_trajetoria(calibracao.SEQUENCIA_PADRAO,
-                                              origem=origem)
-        destino = os.path.join(configuracao_modulo.RAIZ, 'resultados', 'metricas',
-                               'trajetoria_real.json')
-        os.makedirs(os.path.dirname(destino), exist_ok=True)
-        with open(destino, 'w', encoding='utf-8') as arquivo:
-            json.dump({
-                'trecho': self.percurso.nome,
-                'pista_plana': True,
-                'ticks_por_acao': ambiente.ticks_por_acao,
-                'sequencia': list(calibracao.SEQUENCIA_PADRAO),
-                'amostras': amostras,
-            }, arquivo, indent=2)
-
-        self.falar(f"{len(amostras)} amostras gravadas")
-        self.falar("agora rode: python -m src.parkour.calibracao "
-                   "--real resultados/metricas/trajetoria_real.json")
-
-    def _rodar_politica(self, agente, rotulo, modo_didatico=False):
-        ambiente = self.preparar_ambiente()
-        _, informacoes = ambiente.reset()
-        estado = ambiente.observar()
-
-        if isinstance(agente, AgenteGuloso):
-            informacoes = ambiente.correr_com_pathfinder(
-                self.pathfinder_ponte, self.parar_pedido, modo_didatico)
-        else:
-            while not self.parar_pedido.is_set():
-                acao = agente.escolher(estado, ambiente)
-                _, _, terminou, truncou, informacoes = ambiente.passo(acao)
-                estado = ambiente.observar()
-                if terminou or truncou:
-                    break
-
-        self.falar(f"{rotulo}: {informacoes['motivo'] or 'interrompido'} em "
-                   f"{informacoes['passos']} passos, "
-                   f"progresso {informacoes['progresso']:.0%}")
-        self.falar(f"posicao final: mundo x={informacoes['mundo_x']:.2f} "
-                   f"y={informacoes['mundo_y']:.2f} "
-                   f"z={informacoes['mundo_z']:.2f}; "
-                   f"local={informacoes['z']:.2f}")
-        if informacoes.get('pathfinder'):
-            dados = informacoes['pathfinder']
-            self.falar(f"pathfinder: {dados.get('status', '?')}"
-                       f"; reset={dados.get('reset') or 'nenhum'}")
-        if informacoes.get('vertical'):
-            vertical = informacoes['vertical']
-            self.falar(
-                f"vertical: y {vertical['y_minimo']:.2f}.."
-                f"{vertical['y_maximo']:.2f} "
-                f"(variacao {vertical['variacao_y']:.2f}); "
-                f"saltos={vertical['saltos']}; "
-                f"ticks_no_ar={vertical['ticks_no_ar']}")
-            if (informacoes['chegou']
-                    and vertical['variacao_y'] < 0.20):
-                self.falar(
-                    "AVISO: concluiu sem variacao vertical; confira modo de "
-                    "jogo, voo e blocos invisiveis no servidor")
-
-    def comando_guloso(self):
-        self._rodar_politica(AgenteGuloso(), 'guloso')
-
-    def comando_demonstrar(self):
-        """Executa o mesmo planejador sem sprint para exibir os saltos."""
-        self._rodar_politica(AgenteGuloso(), 'demonstracao', modo_didatico=True)
+        tarefas = [threading.Thread(target=resetar, args=(ator,))
+                   for ator in prontos]
+        for tarefa in tarefas:
+            tarefa.start()
+        for tarefa in tarefas:
+            tarefa.join()
+        if erros:
+            raise RuntimeError('; '.join(erros))
+        self.falar(f'{len(prontos)} bots colocados no inicio do percurso')
 
     def comando_rodar(self):
-        """Roda no jogo a politica treinada offline.
+        agente = self._obter_agente()
+        ator = self.atores_prontos()[0]
+        exploracao = agente.iniciar_avaliacao()
+        try:
+            resultado = rodar_episodio(
+                ator.preparar_ambiente(), agente, aprender=False,
+                parar_pedido=self.parar_pedido,
+            )
+        finally:
+            agente.iniciar_treino(exploracao)
+        self.falar(
+            f"fim: {resultado['motivo']}, progresso "
+            f"{resultado.get('progresso_valido', resultado['progresso']):.0%}, "
+            f"{resultado['passos']} passos"
+        )
 
-        A diferenca entre o resultado daqui e o do simulador e o custo de sair
-        do simulador, e e um resultado do trabalho.
-        """
-        ambiente = self.preparar_ambiente()
-        rotulo = configuracao_modulo.rotulo_modelo(
-            self.configuracao, self.percurso.nome)
-        modelo = os.path.join(configuracao_modulo.RAIZ, 'resultados', 'modelos',
-                              f"q_{rotulo}_s0.json")
-        if not os.path.exists(modelo):
-            self.falar("nao achei a tabela treinada. Rode antes, fora do jogo:")
-            cenario = self.configuracao.get('cenario')
-            sufixo = f" --cenario {cenario}" if cenario else ''
-            self.falar("python -m src.parkour.experimento --agente q "
-                       f"--episodios 4000{sufixo}")
-            return
+    def comando_treinar(self, rodadas):
+        """Executa a quantidade pedida de episodios em cada bot pronto."""
+        if rodadas < 1:
+            raise ValueError('a quantidade de rodadas deve ser positiva')
+        if not self.controlador.pronto.is_set():
+            raise RuntimeError('aguarde o bot controlador terminar de conectar')
+        atores = self.atores_prontos()
+        if not atores:
+            raise RuntimeError('nenhum bot esta conectado')
+        agente = self._obter_agente(criar_se_ausente=True)
+        agente.iniciar_treino()
+        caminho_csv = caminho_resultados(self.caminho_modelo)
+        total_episodios = rodadas * len(atores)
 
-        agente = AgenteQLearning(ambiente.quantidade_estados,
-                                 ambiente.quantidade_acoes,
-                                 configuracao_modulo.parametros_q_learning(
-                                     self.configuracao))
-        agente.carregar(modelo)
-        agente.modo_avaliacao()
-        self._rodar_politica(agente, 'politica treinada')
+        resultados = []
+        erros = []
+        inicio = time.monotonic()
+        self.falar(
+            f'iniciando {rodadas} rodadas por bot: {total_episodios} '
+            f'episodios com {len(atores)} bots; '
+            f"epsilon {agente.diagnostico()['exploracao']:.3f}"
+        )
+
+        def trabalhar(indice_ator, ator):
+            ambiente = ator.preparar_ambiente()
+            for rodada in range(1, rodadas + 1):
+                if self.parar_pedido.is_set():
+                    return
+                numero = (rodada - 1) * len(atores) + indice_ator + 1
+                try:
+                    resultado = rodar_episodio(
+                        ambiente, agente, aprender=True,
+                        parar_pedido=self.parar_pedido,
+                    )
+                    if resultado['motivo'] == 'interrompido':
+                        return
+                    agente.fim_de_episodio()
+                    diagnostico = agente.diagnostico()
+                    with self.bloqueio_persistencia:
+                        agente.salvar(self.caminho_modelo)
+                        acrescentar_resultado(
+                            caminho_csv, 'treino', numero, resultado,
+                            diagnostico['exploracao'],
+                        )
+                    with self.bloqueio_resultados:
+                        resultados.append(resultado)
+                        concluidos = len(resultados)
+                        if (concluidos == 1 or concluidos == total_episodios
+                                or concluidos % 5 == 0):
+                            self.falar(
+                                f'treino {concluidos}/{total_episodios}: '
+                                f'rodada {rodada}/{rodadas}, '
+                                f'{resultado["motivo"]}, bot={ator.nome}, '
+                                f'progresso valido '
+                                f'{resultado.get("progresso_valido", resultado["progresso"]):.0%}'
+                            )
+                except Exception as erro:
+                    ator.soltar_controles()
+                    with self.bloqueio_resultados:
+                        erros.append(f'{ator.nome}: {erro}')
+                    return
+
+        tarefas = [threading.Thread(target=trabalhar, args=(indice, ator))
+                   for indice, ator in enumerate(atores)]
+        for tarefa in tarefas:
+            tarefa.start()
+        for tarefa in tarefas:
+            tarefa.join()
+
+        duracao = max(1e-9, time.monotonic() - inicio)
+        sucessos = sum(item['chegou'] for item in resultados)
+        ritmo = len(resultados) * 60 / duracao
+        self.falar(
+            f'treino encerrado: {sucessos}/{len(resultados)} chegadas, '
+            f'{len(resultados)}/{total_episodios} episodios, '
+            f'{ritmo:.1f} episodios/min; tabela e historico salvos'
+        )
+        if erros:
+            print('Erros de bots: ' + '; '.join(erros))
 
     def comando_parar(self):
         self.parar_pedido.set()
-        if self.ambiente is not None:
-            self.ambiente.soltar_controles()
-        self.falar("parando")
+        for ator in self.atores:
+            ator.soltar_controles()
+        self.falar('parada solicitada para todos os bots')
+
+    def encerrar(self):
+        """Fecha as conexoes uma vez para nao deixar bots presos no servidor."""
+        if self.encerrado.is_set():
+            return
+        self.encerrado.set()
+        self.parar_pedido.set()
+        # Encerrar cada proxy `bot.quit()` em sequencia pode bloquear a ponte
+        # Python/Node durante Ctrl+C. Finalizar a ponte fecha todos os sockets
+        # Mineflayer de uma vez e impede processos Node orfaos.
+        try:
+            from javascript import terminate
+            terminate()
+        except Exception:
+            pass
 
 
 def main():
-    analisador = argparse.ArgumentParser(description=__doc__)
-    analisador.add_argument('--cenario', default=None,
-                            help='parkour_oficial ou labirinto_parkours')
-    analisador.add_argument('--trecho', default=None)
-    analisador.add_argument('--listar-cenarios', action='store_true')
-    argumentos = analisador.parse_args()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--cenario', default=None)
+    parser.add_argument('--trecho', default=None)
+    parser.add_argument('--modelo', default=None)
+    parser.add_argument('--bots', type=int, default=None)
+    parser.add_argument('--listar-cenarios', action='store_true')
+    args = parser.parse_args()
 
-    if argumentos.listar_cenarios:
+    if args.listar_cenarios:
         print('\n'.join(configuracao_modulo.cenarios_disponiveis()))
         return
 
-    cenario = argumentos.cenario
+    cenario = args.cenario
     if cenario is None:
         cenario = configuracao_modulo.cenario_para_mundo(
-            configuracao_modulo.mundo_servidor_local())
-        if cenario:
-            print(f"Cenario escolhido pelo level-name do servidor: {cenario}")
-        else:
-            cenario = 'parkour_oficial'
+            configuracao_modulo.mundo_servidor_local()
+        ) or 'parkour_oficial'
 
     from javascript import On
-    parkour = BotParkour(cenario, argumentos.trecho)
-    bot = parkour.bot
+    grupo = GrupoParkour(
+        cenario, args.trecho, args.modelo, quantidade_bots=args.bots
+    )
+    grupo.registrar_eventos(On)
 
-    # Versoes do JSPyBridge divergem sobre entregar ou nao o `this` do
-    # JavaScript como primeiro argumento. ``*argumentos`` torna o evento de
-    # spawn compativel com os dois formatos: ele nao precisa dos argumentos.
-    @On(bot, 'spawn')
-    def ao_nascer(*argumentos):
-        print(f"[{bot.username}] conectado")
-        bot.chat("bot de parkour pronto. Digite: parkour ajuda")
+    def ao_interromper(*_):
+        print('\nEncerrando todos os bots...')
+        grupo.encerrar()
+        raise SystemExit(0)
 
-    @On(bot, 'messagestr')
-    def ao_ouvir(*argumentos):
-        if not argumentos:
-            return
-        # No formato atual, a mensagem e o primeiro argumento. Em versoes que
-        # inserem `this`, ela e o segundo. O evento messagestr entrega a
-        # mensagem como str, enquanto `this` e um proxy JavaScript.
-        mensagem = next((item for item in argumentos[:2]
-                         if isinstance(item, str)), argumentos[0])
-        texto = str(mensagem).strip().lower()
-        if 'parkour' not in texto:
-            return
-
-        # O bot escuta o proprio chat. Como as respostas dele contem a palavra
-        # "parkour", responder a si mesmo viraria um laco infinito de mensagens
-        # - `parkour ajuda` responderia, ouviria a resposta, e responderia de
-        # novo. O chat renderizado vem como "<Nome> mensagem".
-        if f"<{bot.username}>".lower() in texto:
-            return
-
-        print(f"chat: {mensagem}")
-
-        jogador = parkour.dados_bot.get('jogador', '')
-
-        if 'ajuda' in texto:
-            parkour.comando_ajuda()
-        elif 'parar' in texto:
-            parkour.comando_parar()
-        elif 'info' in texto:
-            parkour.em_segundo_plano(parkour.comando_info)
-        elif 'teste' in texto:
-            parkour.em_segundo_plano(parkour.comando_teste)
-        elif 'reset' in texto:
-            parkour.em_segundo_plano(parkour.comando_reset)
-        elif 'marcar' in texto:
-            parkour.em_segundo_plano(parkour.comando_marcar, jogador)
-        elif 'verificar' in texto:
-            parkour.em_segundo_plano(parkour.comando_verificar)
-        elif 'calibrar' in texto:
-            parkour.em_segundo_plano(parkour.comando_calibrar)
-        elif 'demonstrar' in texto:
-            parkour.em_segundo_plano(parkour.comando_demonstrar)
-        elif 'guloso' in texto:
-            parkour.em_segundo_plano(parkour.comando_guloso)
-        elif 'rodar' in texto:
-            parkour.em_segundo_plano(parkour.comando_rodar)
+    signal.signal(signal.SIGINT, ao_interromper)
+    # Nao depender do callback atexit da ponte Python/JavaScript: a funcao
+    # principal permanece viva ate o usuario pedir o encerramento.
+    grupo.encerrado.wait()
 
 
 if __name__ == '__main__':

@@ -2,7 +2,7 @@
 
 Sao dois arquivos, de proposito:
 
-- config/parkour.json  parametros comuns de treino e simulacao;
+- config/parkour.json  parametros comuns do treinamento no jogo;
 - config/cenarios/     mundo, mapa e trechos escolhidos para uma execucao;
 - config/bot.json      ignorado pelo Git, guarda o IP de cada integrante.
 
@@ -61,7 +61,7 @@ def carregar(caminho=None, cenario=None):
     """Le os parametros comuns e, opcionalmente, sobrepoe um cenario.
 
     A sobreposicao e feita por chave de primeiro nivel. Assim um cenario troca
-    ``mapa`` e ``trechos`` por inteiro, mas herda recompensa, estado e agentes.
+    ``mapa`` e ``trechos`` por inteiro, mas herda os parametros do Q-Learning.
     Sem ``cenario`` o comportamento antigo e preservado para compatibilidade.
     """
     configuracao = carregar_json(caminho or CAMINHO_PARKOUR)

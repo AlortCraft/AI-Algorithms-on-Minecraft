@@ -11,6 +11,7 @@ Comportamentos desejados        sinal
   chegar na meta                + meta
 Comportamentos indesejados
   cair da ponte                 - queda
+  encerrar preso num obstaculo  - travado
   demorar                       - por_passo a cada decisao
   ficar parado batendo na parede - parado
 
@@ -27,6 +28,7 @@ class Recompensa:
         self.progresso = pesos.get('progresso', 1.0)
         self.por_passo = pesos.get('por_passo', -0.02)
         self.queda = pesos.get('queda', -10.0)
+        self.travado = pesos.get('travado', -10.0)
         self.meta = pesos.get('meta', 20.0)
         self.parado = pesos.get('parado', -0.05)
         self.limite_parado = pesos.get('limite_parado', 0.05)
@@ -34,8 +36,7 @@ class Recompensa:
     def calcular(self, progresso_antes, progresso_depois, motivo):
         """Recompensa de um passo.
 
-        motivo e None enquanto o episodio segue, ou 'queda' / 'meta' no passo
-        que o encerra.
+        motivo e None enquanto o episodio segue, ou o motivo do encerramento.
         """
         avanco = progresso_depois - progresso_antes
         valor = avanco * self.progresso + self.por_passo
@@ -45,6 +46,8 @@ class Recompensa:
 
         if motivo == 'queda':
             valor += self.queda
+        elif motivo == 'travado':
+            valor += self.travado
         elif motivo == 'meta':
             valor += self.meta
 
@@ -52,4 +55,5 @@ class Recompensa:
 
     def descrever(self):
         return (f"progresso={self.progresso} por_passo={self.por_passo} "
-                f"queda={self.queda} meta={self.meta} parado={self.parado}")
+                f"queda={self.queda} travado={self.travado} "
+                f"meta={self.meta} parado={self.parado}")

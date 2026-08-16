@@ -7,12 +7,12 @@ Nao precisa de Minecraft, nem de nenhuma biblioteca instalada.
 
 import sys
 
-from testes import teste_ambiente, teste_fisica
+from testes import teste_q_learning
 
 
 def main():
     codigo = 0
-    for modulo in (teste_fisica, teste_ambiente):
+    for modulo in (teste_q_learning,):
         codigo |= modulo.main()
 
     print()

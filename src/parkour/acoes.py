@@ -5,13 +5,29 @@ Cada acao e uma combinacao de controles mantida por varios ticks seguidos
 cada tick reduz o tamanho do problema em quatro vezes e ainda deixa controle
 suficiente: 4 ticks sao 200 ms, e um pulo inteiro dura cerca de 25 ticks.
 
-A pergunta que a pag. 4 do PDF manda investigar e justamente esta: "as acoes
-serao simples, combinadas ou terao duracao?". Este catalogo e uma resposta
-inicial, nao a definitiva. Mexer aqui e um experimento valido, desde que
-registrado em docs/registro_experimentos.md.
+O cenario simples restringe o Q-Learning a ``andar``, ``correr``,
+``correr_pulo`` e ``andar_pulo``.
+O mapa oficial libera o catalogo completo porque exige desvios laterais.
 """
 
-from .fisica import Entradas
+class Entradas:
+    """Controles booleanos que serao enviados ao Mineflayer."""
+
+    def __init__(self, frente=False, tras=False, esquerda=False,
+                 direita=False, pular=False, correr=False):
+        self.frente = frente
+        self.tras = tras
+        self.esquerda = esquerda
+        self.direita = direita
+        self.pular = pular
+        self.correr = correr
+
+
+# A versao muda quando indices existentes passam a significar outra acao.
+# Ela faz o caminho padrao apontar para uma tabela nova e impede que modelos
+# antigos sejam interpretados com a ordem abaixo.
+VERSAO_CATALOGO = 2
+
 
 # (nome, controles). A ordem define o indice numerico de cada acao, que e o
 # que os agentes usam. Nao reordene sem retreinar: uma tabela Q salva antes
@@ -20,6 +36,7 @@ CATALOGO = (
     ('andar',        dict(frente=True)),
     ('correr',       dict(frente=True, correr=True)),
     ('correr_pulo',  dict(frente=True, correr=True, pular=True)),
+    ('andar_pulo',   dict(frente=True, pular=True)),
     ('esquerda',     dict(frente=True, esquerda=True)),
     ('direita',      dict(frente=True, direita=True)),
     ('parar',        dict()),

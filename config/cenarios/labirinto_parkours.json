@@ -1,8 +1,9 @@
 {
   "_comentario": [
     "Treinos simples construidos dentro de world_labirinto.",
-    "Os dois percursos foram exportados diretamente do mundo salvo.",
-    "Ambos avancam em -X, mas frente_2 possui apoios em alturas diferentes."
+    "Os percursos avancam em -X e terminam na mesma plataforma.",
+    "frente_1 tem vaos de 1 bloco; frente_2, vaos de 2 blocos.",
+    "frente_3 combina distancias e alturas, incluindo uma queda com dano."
   ],
   "mundo": "world_labirinto",
   "trechos": {
@@ -11,28 +12,45 @@
       "mapa": "config/mapas/world_labirinto_frente_1.json",
       "inicio": {"x": 87, "y": 125, "z": 74},
       "fim": {"x": 34, "y": 125, "z": 74},
+      "plataforma_meta": {
+        "inicio": {"x": 32, "y": 124, "z": 54},
+        "fim": {"x": 36, "y": 127, "z": 77}
+      },
       "y_pe": 125
     },
     "frente_2": {
-      "_nota": "Parkour com apoios em alturas diferentes: avanca 53 blocos em -X.",
+      "_nota": "Parkour intermediario com pulos de 2 blocos em -X.",
       "mapa": "config/mapas/world_labirinto_frente_2.json",
+      "inicio": {"x": 87, "y": 125, "z": 65},
+      "fim": {"x": 34, "y": 125, "z": 65},
+      "plataforma_meta": {
+        "inicio": {"x": 32, "y": 124, "z": 54},
+        "fim": {"x": 36, "y": 127, "z": 77}
+      },
+      "y_pe": 125
+    },
+    "frente_3": {
+      "_nota": "Parkour avancado com distancias e alturas variadas, incluindo queda com dano.",
+      "mapa": "config/mapas/world_labirinto_frente_3.json",
       "inicio": {"x": 87, "y": 125, "z": 56},
       "fim": {"x": 34, "y": 125, "z": 56},
+      "plataforma_meta": {
+        "inicio": {"x": 32, "y": 124, "z": 54},
+        "fim": {"x": 36, "y": 127, "z": 77}
+      },
       "y_pe": 125
     }
   },
   "trecho_padrao": "frente_1",
   "estado": {
-    "_nota": "O desafio deste cenario sao os vaos no piso, nao paredes laterais.",
+    "_nota": "O desafio deste cenario sao os vaos e as alturas dos apoios, nao paredes laterais.",
     "modo": "piso"
   },
-  "acoes_q_learning": [1, 2],
+  "acoes_q_learning": [0, 1, 2, 3],
   "episodio": {
     "_nota": "A pista tem um bloco de largura; variar lateralmente o nascimento pode colocar o corpo quase fora da borda.",
     "ticks_por_acao": 4,
-    "passos_maximos": 120,
-    "queda_abaixo_de": 3.0,
-    "variar_inicio": false
-  },
-  "calibracao": {"disponivel": false}
+    "passos_maximos": 80,
+    "queda_abaixo_de": 3.0
+  }
 }

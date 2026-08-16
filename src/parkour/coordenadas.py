@@ -1,7 +1,7 @@
 """Conversao entre coordenadas do Minecraft e coordenadas do percurso.
 
-O simulador nasceu para uma ponte que segue +Z: X e lateral e Z e progresso.
-Os treinos simples construidos em ``world_labirinto`` seguem -X. Em vez de
+O mapa oficial segue +Z: X e lateral e Z e progresso. Os treinos simples
+construidos em ``world_labirinto`` seguem -X. Em vez de
 espalhar quatro casos (+X, -X, +Z, -Z) pelo projeto, esta classe transforma
 qualquer corredor reto em um sistema local unico:
 
@@ -9,7 +9,7 @@ qualquer corredor reto em um sistema local unico:
     local.y  = altura, sem alteracao
     local.z  = progresso em direcao a meta
 
-Assim fisica, estado, recompensa e agentes continuam trabalhando como antes.
+Assim estado, recompensa e Q-Learning usam uma unica direcao de avanco.
 """
 
 import math
@@ -63,8 +63,8 @@ class TransformacaoPercurso:
             self.frente_x, self.frente_z = 0, (1 if dz > 0 else -1)
             self.comprimento = abs(dz)
 
-        # +local.x conserva a convencao antiga do simulador. Para +Z ele e
-        # exatamente +X do mundo. A mesma rotacao vale nas outras direcoes.
+        # Para +Z, +local.x e exatamente +X do mundo. A mesma rotacao vale nas
+        # outras direcoes.
         self.lateral_x = self.frente_z
         self.lateral_z = -self.frente_x
         self.nome_direcao, self.yaw = self.DIRECOES[
