@@ -6,7 +6,7 @@ Exemplo:
 
 Comandos no chat:
 
-    parkour ajuda | info | reset | rodar | treinar N | parar
+    parkour ajuda | info | reset | rodar | avaliar N | treinar N | parar
 """
 
 import argparse
@@ -196,13 +196,24 @@ class GrupoParkour:
                 return
 
             if 'ajuda' in texto:
-                self.falar('parkour info | reset | rodar | treinar N | parar')
+                self.falar(
+                    'parkour info | reset | rodar | avaliar N | '
+                    'treinar N | parar'
+                )
             elif 'parar' in texto:
                 self.comando_parar()
             elif 'info' in texto:
                 self.executar_em_segundo_plano(self.comando_info)
             elif 'reset' in texto:
                 self.executar_em_segundo_plano(self.comando_reset)
+            elif 'avaliar' in texto:
+                encontrado = re.search(r'parkour\s+avaliar\s+(\d+)', texto)
+                if encontrado:
+                    self.executar_em_segundo_plano(
+                        self.comando_avaliar, int(encontrado.group(1))
+                    )
+                else:
+                    self.falar('use: parkour avaliar TENTATIVAS')
             elif 'treinar' in texto:
                 encontrado = re.search(r'parkour\s+treinar\s+(\d+)', texto)
                 if encontrado:
@@ -359,6 +370,89 @@ class GrupoParkour:
             f"{resultado.get('progresso_valido', resultado['progresso']):.0%}, "
             f"{resultado['passos']} passos"
         )
+
+    def comando_avaliar(self, tentativas):
+        """Avalia a politica sem exploracao ou aprendizado e salva o CSV."""
+        if tentativas < 1:
+            raise ValueError('a quantidade de tentativas deve ser positiva')
+        if not self.controlador.pronto.is_set():
+            raise RuntimeError('aguarde o bot controlador terminar de conectar')
+        atores = self.atores_prontos()
+        if not atores:
+            raise RuntimeError('nenhum bot esta conectado')
+
+        agente = self._obter_agente()
+        caminho_csv = caminho_resultados(self.caminho_modelo)
+        resultados = []
+        erros = []
+        inicio = time.monotonic()
+        exploracao_anterior = agente.iniciar_avaliacao()
+        self.falar(
+            f'iniciando avaliacao: {tentativas} tentativas com '
+            f'{min(len(atores), tentativas)} bots; epsilon 0'
+        )
+
+        def trabalhar(indice_ator, ator):
+            ambiente = ator.preparar_ambiente()
+            for numero in range(indice_ator + 1, tentativas + 1, len(atores)):
+                if self.parar_pedido.is_set():
+                    return
+                try:
+                    resultado = rodar_episodio(
+                        ambiente, agente, aprender=False,
+                        parar_pedido=self.parar_pedido,
+                    )
+                    if resultado['motivo'] == 'interrompido':
+                        return
+                    with self.bloqueio_persistencia:
+                        acrescentar_resultado(
+                            caminho_csv, 'avaliacao', numero, resultado, 0.0
+                        )
+                    with self.bloqueio_resultados:
+                        resultados.append(resultado)
+                        concluidos = len(resultados)
+                        if (concluidos == 1 or concluidos == tentativas
+                                or concluidos % 5 == 0):
+                            sucessos = sum(
+                                item['chegou'] for item in resultados
+                            )
+                            self.falar(
+                                f'avaliacao {concluidos}/{tentativas}: '
+                                f'{sucessos} chegadas'
+                            )
+                except Exception as erro:
+                    ator.soltar_controles()
+                    with self.bloqueio_resultados:
+                        erros.append(f'{ator.nome}: {erro}')
+                    return
+
+        tarefas = [
+            threading.Thread(target=trabalhar, args=(indice, ator))
+            for indice, ator in enumerate(atores[:tentativas])
+        ]
+        try:
+            for tarefa in tarefas:
+                tarefa.start()
+            for tarefa in tarefas:
+                tarefa.join()
+        finally:
+            agente.iniciar_treino(exploracao_anterior)
+
+        duracao = max(1e-9, time.monotonic() - inicio)
+        sucessos = sum(item['chegou'] for item in resultados)
+        quantidade = len(resultados)
+        taxa = sucessos / quantidade if quantidade else 0.0
+        media_passos = (
+            sum(item['passos'] for item in resultados) / quantidade
+            if quantidade else 0.0
+        )
+        self.falar(
+            f'avaliacao encerrada: {sucessos}/{quantidade} chegadas '
+            f'({taxa:.0%}), media {media_passos:.1f} passos, '
+            f'{quantidade * 60 / duracao:.1f} episodios/min; historico salvo'
+        )
+        if erros:
+            print('Erros de bots: ' + '; '.join(erros))
 
     def comando_treinar(self, rodadas):
         """Executa a quantidade pedida de episodios em cada bot pronto."""

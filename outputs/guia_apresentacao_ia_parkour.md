@@ -174,32 +174,38 @@ Arquivos salvos:
 - modelo: `resultados/modelos/q_learning_labirinto_parkours_frente_1_acoes_v2_estado_v2_recompensa_v2.json`;
 - histórico: `resultados/modelos/q_learning_labirinto_parkours_frente_1_acoes_v2_estado_v2_recompensa_v2_resultado.csv`.
 
-### Slide 10 — Treino versus avaliação — 1min15s
+### Slide 10 — Avaliação da política — 1min15s
 
-O histórico limpo mostra:
+A política salva foi executada em três lotes, todos com `ε = 0` e `aprender = False`. Portanto, não houve exploração aleatória nem atualização da tabela Q durante a avaliação.
 
-- epsilon `0,05` em todos os registros;
-- retorno médio de `4,34` nos primeiros 1.000 e `9,84` nos últimos 1.000;
-- progresso válido médio de `26,3%` nos primeiros 1.000 e `34,3%` nos últimos 1.000.
+As três execuções devem ser apresentadas juntas, como solicitado pelo grupo:
 
-Ainda não existem linhas com `fase = avaliacao` no CSV. Todas as 3.500 linhas são de treino. A avaliação adequada agora é:
+```text
+10 + 50 + 50 = 110 tentativas de avaliação
+```
 
-1. Carregar o modelo salvo.
-2. Desligar exploração e aprendizado — o comando `parkour rodar` já usa `ε = 0` e `aprender = False`.
-3. Repetir várias tentativas independentes.
-4. Medir taxa de chegada, recompensa acumulada e passos até a meta.
-5. Relatar separadamente as métricas de treino e de avaliação.
+| Execução | Tentativas | Chegadas | Taxa | Retorno médio | Passos médios | Progresso válido médio |
+|---|---:|---:|---:|---:|---:|---:|
+| Primeira | 10 | 4 | 40,00% | 32,15 | 33,30 | 62,89% |
+| Segunda | 50 | 2 | 4,00% | 0,50 | 14,54 | 20,37% |
+| Terceira | 50 | 2 | 4,00% | 6,35 | 16,40 | 31,54% |
+| **Consolidado** | **110** | **8** | **7,27%** | **6,03** | **17,09** | **29,32%** |
+
+Interpretação correta: a avaliação confirma que a política aprendida consegue terminar o percurso sem exploração, mas o desempenho ainda é limitado — houve 102 falhas em 110 tentativas. Também existe alta variação entre os lotes: a primeira execução teve somente dez tentativas e não deve esconder que as duas execuções maiores obtiveram 4,00% cada.
+
+Ao apresentar, informar tanto o consolidado `8/110 = 7,27%` quanto as taxas individuais `40,00%`, `4,00%` e `4,00%`.
 
 ### Slide 11 — Conclusão — 0min45s
 
 - Representação: o ambiente 3D foi transformado em 3.456 estados significativos.
 - Aprendizado: epsilon-greedy coleta experiências e Bellman atualiza os valores.
 - Objetivo: a recompensa favorece progresso, rapidez e chegada, penalizando falhas.
-- Próximo passo: carregar o modelo salvo e avaliar a política sem exploração.
+- Avaliação: com epsilon zero, a política chegou em 8 de 110 tentativas, ou 7,27%.
+- Limitação: o resultado varia entre execuções e 102 tentativas terminaram em queda.
 
 Frase final:
 
-> “A principal contribuição não é uma regra de pulo, mas uma representação que permite ao agente aprender a regra por experiência.”
+> “A política foi aprendida, mas a avaliação mostra que seu desempenho ainda é instável e limitado.”
 
 ## 4. O que precisa ser entendido sobre a conversão
 
@@ -273,7 +279,15 @@ Para impedir que o agente ganhe recompensa indo e voltando. O deslocamento negat
 
 ### Os resultados provam que o agente aprendeu?
 
-Eles mostram evidência de aprendizado durante o treino: a taxa de chegada passou de 6,00% nos primeiros 1.000 registros para 10,40% nos últimos 1.000, enquanto retorno e progresso médio também aumentaram. Ainda falta medir a política separadamente com epsilon zero para estimar seu desempenho sem ações exploratórias.
+Eles mostram duas evidências. Durante o treino, a taxa de chegada passou de 6,00% nos primeiros 1.000 registros para 10,40% nos últimos 1.000, enquanto retorno e progresso médio também aumentaram. Separadamente, com epsilon zero e sem atualizar Q, a política chegou em 8 de 110 tentativas. Isso mostra que ela aprendeu ações capazes de alcançar a meta, mas não prova convergência nem desempenho confiável, pois 102 tentativas falharam e houve grande variação entre as três execuções.
+
+### Como a política foi avaliada?
+
+O mesmo modelo salvo foi carregado e executado com `ε = 0` e `aprender = False`. Assim, o agente escolheu somente ações da política aprendida e a tabela Q permaneceu congelada. Foram consolidadas três execuções de 10, 50 e 50 tentativas.
+
+### Por que a avaliação contém 110 tentativas?
+
+Porque foram realizadas três execuções e o grupo decidiu apresentá-las juntas: `10 + 50 + 50 = 110`. O total teve 8 chegadas, mas as taxas individuais também devem ser citadas: 40,00%, 4,00% e 4,00%.
 
 ### Quantos episódios entram nos resultados apresentados?
 
@@ -310,9 +324,10 @@ As linhas abaixo correspondem ao estado atual do repositório.
 | Progresso normalizado no CSV | `src/parkour/ambiente_mc.py:256-280` | progresso bruto, progresso válido e chegada |
 | Laço de um episódio | `src/parkour/treinar.py:54-94` | sequência escolher → agir → aprender |
 | Registro de resultados | `src/parkour/treinar.py:97-125` | colunas e escrita do CSV |
-| Treinamento paralelo | `src/parkour/main.py:363-439` | rodadas por bot, numeração, salvamento e histórico |
+| Avaliação paralela | `src/parkour/main.py:374-455` | epsilon zero, aprendizado desligado, divisão entre bots e gravação no CSV |
+| Treinamento paralelo | `src/parkour/main.py:457-557` | rodadas por bot, numeração, salvamento e histórico |
 | Modelo Q salvo | `resultados/modelos/q_learning_labirinto_parkours_frente_1_acoes_v2_estado_v2_recompensa_v2.json` | tabela, visitas, epsilon e metadados |
-| Histórico válido | `resultados/modelos/q_learning_labirinto_parkours_frente_1_acoes_v2_estado_v2_recompensa_v2_resultado.csv` | 3.500 registros do treino mais recente |
+| Histórico válido | `resultados/modelos/q_learning_labirinto_parkours_frente_1_acoes_v2_estado_v2_recompensa_v2_resultado.csv` | 3.500 registros de treino e 110 registros de avaliação |
 
 ## 7. Números para memorizar
 
@@ -342,6 +357,14 @@ Primeiros 1.000:     6,00% de chegada
 Retorno médio:       4,34 → 9,84
 Progresso válido:    26,3% → 34,3%
 Epsilon no histórico: 0,05
+Avaliações reunidas: 3
+Tentativas avaliadas: 110
+Epsilon na avaliação: 0
+Chegadas na avaliação: 8 — 7,27%
+Taxas por execução: 40,00% · 4,00% · 4,00%
+Retorno médio aval.: 6,03
+Passos médios aval.: 17,09
+Progresso válido aval.: 29,32%
 ```
 
 ## 8. Afirmações que devem ser evitadas
@@ -352,7 +375,10 @@ Epsilon no histórico: 0,05
 - Não dizer que o agente convergiu; os dados mostram evolução, não prova matemática de convergência.
 - Não apresentar `10,40%` como taxa final da política: é a taxa nos últimos 1.000 episódios de treino com exploração.
 - Não misturar os treinamentos antigos com o histórico atual: as métricas usam somente as 3.500 linhas do CSV limpo.
-- Não inventar taxa de avaliação: ainda não existem registros com `fase = avaliacao`.
+- Não omitir que os 110 registros de avaliação vieram de três execuções de 10, 50 e 50 tentativas.
+- Não esconder a variação entre as execuções: as taxas foram 40,00%, 4,00% e 4,00%.
+- Não dizer que 7,27% prova convergência ou bom desempenho: 102 das 110 tentativas falharam.
+- Não comparar diretamente 7,20% no treino e 7,27% na avaliação como se fossem a mesma medida; as condições de exploração e aprendizado são diferentes.
 - Não dizer que o treino usa um simulador próprio; a geometria é exportada, mas a dinâmica vem do ambiente real.
 - Não gastar tempo explicando regras ou itens do jogo. Traduzir tudo para estado, ação, transição e recompensa.
 
@@ -362,7 +388,8 @@ Epsilon no histórico: 0,05
 - Quem apresentar o slide 3 sabe desenhar o pipeline `mundo → colisões → eixo local → estado`.
 - Quem apresentar o slide 5 sabe ler a equação sem decorar cada símbolo isoladamente.
 - Quem apresentar o slide 8 sabe explicar progresso líquido e *reward hacking*.
-- O grupo distingue `38/38` testes de corretude, 252 chegadas durante treino e a futura taxa de avaliação.
+- O grupo distingue `38/38` testes de corretude, 252 chegadas durante treino e 8 chegadas em 110 tentativas de avaliação.
 - O grupo memoriza a configuração correta: 70 bots × 50 rodadas = 3.500 episódios.
-- O grupo usa somente os 3.500 registros do histórico limpo ao citar resultados.
+- O grupo sabe explicar que a avaliação reúne três execuções: 10 + 50 + 50 = 110 tentativas.
+- O grupo cita o consolidado de 7,27% junto com as taxas individuais de 40,00%, 4,00% e 4,00%.
 - O grupo ensaia uma vez com cronômetro e preserva pelo menos um minuto para perguntas.

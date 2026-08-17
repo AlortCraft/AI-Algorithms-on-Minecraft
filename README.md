@@ -39,6 +39,7 @@ parkour info
 parkour reset
 parkour treinar 100
 parkour rodar
+parkour avaliar 30
 parkour parar
 ```
 
@@ -63,6 +64,11 @@ enquanto aumentarem essa taxa e o MSPT permanecer abaixo de 50.
 
 `parkour rodar` desliga temporariamente a exploração e executa uma tentativa
 sem aprendizado. Essa é a forma mais simples de testar a política aprendida.
+
+`parkour avaliar 30` distribui exatamente 30 tentativas entre os bots
+conectados, também com exploração zero e sem aprendizado. Cada resultado é
+salvo no mesmo histórico CSV com a fase `avaliacao`; ao final, o chat informa
+a taxa de chegada, a média de passos e o ritmo de episódios por minuto.
 
 O histórico CSV registra progresso horizontal, progresso validado por pouso,
 altura final, ponto válido mais distante e quantas vezes cada ação foi usada.

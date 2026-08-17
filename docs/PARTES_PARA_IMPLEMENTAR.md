@@ -31,10 +31,12 @@ estado inicial antes do próximo episódio.
 
 ### Avaliação confiável
 
-`parkour rodar` faz uma tentativa com exploração zero. Para comparar
-parâmetros, ainda é preciso executar várias tentativas, registrar a taxa de
-chegada e comparar tabelas diferentes. Um comando `parkour avaliar N` pode ser
-adicionado depois para automatizar isso.
+`parkour rodar` faz uma tentativa com exploração zero. Para uma medição
+repetida, `parkour avaliar N` distribui N tentativas entre os bots conectados,
+mantém a exploração em zero, não atualiza a tabela Q e registra cada episódio
+no CSV com a fase `avaliacao`. O resumo final informa taxa de chegada e média
+de passos. Para comparar parâmetros, use um arquivo de modelo diferente para
+cada combinação e execute a mesma quantidade de avaliações.
 
 ### Velocidade e quantidade de bots
 

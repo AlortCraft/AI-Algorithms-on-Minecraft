@@ -672,6 +672,48 @@ def teste_distribuicao_entre_bots(verificador):
     )
 
 
+def teste_avaliacao_automatizada(verificador):
+    agente = QLearning(2, 1, {
+        'taxa_aprendizado': 1.0,
+        'exploracao_inicial': 0.25,
+    })
+    grupo = GrupoParkour.__new__(GrupoParkour)
+    grupo.atores = [AtorFalso(f'Bot{numero}') for numero in range(4)]
+    grupo.controlador = grupo.atores[0]
+    grupo.agente = agente
+    grupo.bloqueio_agente = threading.Lock()
+    grupo.bloqueio_persistencia = threading.Lock()
+    grupo.bloqueio_resultados = threading.Lock()
+    grupo.parar_pedido = threading.Event()
+    mensagens = []
+    grupo.falar = mensagens.append
+
+    with tempfile.TemporaryDirectory() as pasta:
+        grupo.caminho_modelo = os.path.join(pasta, 'modelo.json')
+        agente.salvar(grupo.caminho_modelo)
+        grupo.comando_avaliar(7)
+        caminho_csv = os.path.splitext(grupo.caminho_modelo)[0] + \
+            '_resultado.csv'
+        with open(caminho_csv, encoding='utf-8') as arquivo:
+            linhas = arquivo.readlines()
+
+    verificador.verdadeiro(
+        sum(ator.ambiente.episodios for ator in grupo.atores) == 7
+        and len(linhas) == 8
+        and all('avaliacao' in linha for linha in linhas[1:]),
+        'avaliar N executa e registra exatamente N tentativas',
+    )
+    verificador.verdadeiro(
+        agente.visitas[0] == 0 and abs(agente.exploracao - 0.25) < 1e-9,
+        'a avaliacao nao aprende e restaura a exploracao anterior',
+    )
+    verificador.verdadeiro(
+        '7/7 chegadas (100%)' in mensagens[-1]
+        and 'media 1.0 passos' in mensagens[-1],
+        'o resumo informa taxa de chegada e media de passos',
+    )
+
+
 def teste_historico_csv(verificador):
     info = {
         'recompensa': 2.0,
