@@ -79,11 +79,12 @@ limitam o bot a quatro ações: andar, correr, correr pulando e andar pulando. O
 mapa oficial possui também ações laterais e exige mais experiências reais. A
 vida e a fome são restauradas no reset quando necessário, portanto a queda
 obrigatória da `frente_3` não se acumula entre episódios.
-ordem atual é a versão 2 do catálogo; seus modelos usam o sufixo
-`_acoes_v2_estado_v2.json` e começam do zero. O estado de piso também é versão
-2: distingue apoio nivelado, subida, queda curta, queda longa e apoio alto. Os
-resultados antigos permanecem no disco, mas não são carregados nem sobrescritos
-automaticamente.
+A ordem atual é a versão 2 do catálogo, o estado de piso é versão 2 e a
+recompensa é versão 2. Os modelos usam o sufixo
+`_acoes_v2_estado_v2_recompensa_v2.json` e começam do zero. A recompensa das
+três frentes só reconhece novo progresso depois de um pouso em apoio mapeado;
+correr por baixo da pista não ensina uma política falsa. Os resultados antigos
+permanecem no disco, mas não são carregados nem sobrescritos automaticamente.
 
 ## Parâmetros
 

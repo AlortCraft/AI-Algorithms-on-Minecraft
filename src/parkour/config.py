@@ -61,7 +61,8 @@ def carregar(caminho=None, cenario=None):
     """Le os parametros comuns e, opcionalmente, sobrepoe um cenario.
 
     A sobreposicao e feita por chave de primeiro nivel. Assim um cenario troca
-    ``mapa`` e ``trechos`` por inteiro, mas herda os parametros do Q-Learning.
+    ``mapa`` e ``trechos`` por inteiro. A secao ``recompensa`` e combinada para
+    permitir uma regra especifica do cenario sem perder os pesos comuns.
     Sem ``cenario`` o comportamento antigo e preservado para compatibilidade.
     """
     configuracao = carregar_json(caminho or CAMINHO_PARKOUR)
@@ -69,6 +70,10 @@ def carregar(caminho=None, cenario=None):
         return configuracao
 
     dados_cenario = carregar_json(caminho_cenario(cenario))
+    if 'recompensa' in dados_cenario:
+        recompensa_combinada = dict(configuracao.get('recompensa', {}))
+        recompensa_combinada.update(dados_cenario['recompensa'])
+        dados_cenario['recompensa'] = recompensa_combinada
     configuracao.update(dados_cenario)
     configuracao['cenario'] = cenario
     return configuracao

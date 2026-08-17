@@ -47,6 +47,10 @@
     "modo": "piso"
   },
   "acoes_q_learning": [0, 1, 2, 3],
+  "recompensa": {
+    "_nota": "So recompensa novo progresso depois de pousar em um apoio mapeado.",
+    "progresso_exige_pouso": true
+  },
   "episodio": {
     "_nota": "A pista tem um bloco de largura; variar lateralmente o nascimento pode colocar o corpo quase fora da borda.",
     "ticks_por_acao": 4,

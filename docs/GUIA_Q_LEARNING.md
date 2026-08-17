@@ -160,6 +160,12 @@ O arquivo `recompensa.py` soma sinais simples:
 O progresso usa deslocamento líquido. Andar para frente e voltar não gera uma
 recompensa infinita, porque o retorno cancela o avanço.
 
+Nas três frentes de treino, o avanço só entra na recompensa quando o bot pousa
+em um apoio pertencente ao percurso. O deslocamento bruto continua no CSV para
+diagnóstico, mas atravessar a pista no ar ou correr por baixo dela não conta
+como aprendizado útil. Essa mudança é a versão 2 da recompensa e cria modelos
+novos com o sufixo `_recompensa_v2`.
+
 ## 7. Episódio
 
 Um episódio começa com `reset()` e termina por:

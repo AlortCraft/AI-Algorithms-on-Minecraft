@@ -4,6 +4,7 @@ import os
 import sys
 import tempfile
 import threading
+from unittest import mock
 
 from src.parkour import acoes, config as parkour_config, estado
 from src.parkour.ambiente_mc import AmbienteMinecraft
@@ -61,13 +62,38 @@ def teste_catalogo_de_acoes_versionado(verificador):
         'andar_pulo ocupa o indice 3 no catalogo novo',
     )
     caminho = caminho_padrao_modelo(
-        {'cenario': 'labirinto_parkours'}, 'frente_1'
+        {
+            'cenario': 'labirinto_parkours',
+            'recompensa': {'progresso_exige_pouso': True},
+        },
+        'frente_1',
     )
     verificador.verdadeiro(
         caminho.endswith(
-            'q_learning_labirinto_parkours_frente_1_acoes_v2_estado_v2.json'
+            'q_learning_labirinto_parkours_frente_1_acoes_v2_estado_v2_'
+            'recompensa_v2.json'
         ),
-        'as novas acoes e o novo estado ignoram modelos antigos',
+        'acoes, estado e recompensa novos ignoram modelos antigos',
+    )
+    caminho_oficial = caminho_padrao_modelo(
+        {'cenario': 'parkour_oficial'}, 'A'
+    )
+    verificador.verdadeiro(
+        caminho_oficial.endswith(
+            'q_learning_parkour_oficial_A_acoes_v2_estado_v2.json'
+        ),
+        'o mapa oficial preserva o modelo porque nao exige pouso a cada avanco',
+    )
+
+
+def teste_cenario_herda_pesos_da_recompensa(verificador):
+    configuracao = parkour_config.carregar(cenario='labirinto_parkours')
+    pesos = configuracao['recompensa']
+    verificador.verdadeiro(
+        pesos['progresso_exige_pouso']
+        and pesos['meta'] == 20.0
+        and pesos['queda'] == -10.0,
+        'a regra de pouso preserva os pesos comuns da recompensa',
     )
 
 
@@ -233,6 +259,7 @@ def teste_meta_detectada_no_tick_do_pouso(verificador):
         'indice': lambda _self, _corpo: 0,
     })()
     ambiente.recompensa = Recompensa({})
+    ambiente.progresso_exige_pouso = True
     ambiente.ticks_por_acao = 4
     ambiente.passos_maximos = 80
     ambiente.queda_abaixo_de = 3.0
@@ -253,11 +280,92 @@ def teste_meta_detectada_no_tick_do_pouso(verificador):
         corpo.posicao_mundo = (0.0, corpo.y, corpo.z)
 
     ambiente._esperar_ticks = esperar
-    _estado, _recompensa, terminou, _truncou, informacoes = ambiente.passo(0)
+    _estado, valor, terminou, _truncou, informacoes = ambiente.passo(0)
 
     verificador.verdadeiro(
         terminou and informacoes['motivo'] == 'meta' and len(ticks) == 2,
         'a acao para no tick exato em que o bot pousa na plataforma final',
+    )
+    verificador.perto(
+        valor, 20.58, 1e-9,
+        'um novo pouso valido continua recebendo progresso e bonus da meta',
+    )
+
+
+def teste_avanco_sob_a_pista_nao_recebe_recompensa(verificador):
+    ambiente = AmbienteMinecraft.__new__(AmbienteMinecraft)
+    ambiente.percurso = type('Percurso', (), {
+        'y_pe': 125.0,
+        'z_inicio': 0.0,
+        'z_meta': 53.0,
+        'z_chegada': 53.0,
+        'plataforma_meta': None,
+        'comprimento': lambda _self: 53.0,
+        'superficies_em': lambda _self, _z: [],
+    })()
+    corpo = type('Corpo', (), {
+        'x': 0.0,
+        'y': 123.0,
+        'z': 0.5,
+        'no_chao': False,
+        'posicao_mundo': (0.0, 123.0, 0.5),
+    })()
+    ambiente.bot = type('Bot', (), {
+        'setControlState': lambda _self, _nome, _valor: None,
+    })()
+    ambiente.corpo = corpo
+    ambiente.discretizador = type('Estado', (), {
+        'indice': lambda _self, _corpo: 0,
+    })()
+    ambiente.recompensa = Recompensa({})
+    ambiente.progresso_exige_pouso = True
+    ambiente.ticks_por_acao = 1
+    ambiente.passos_maximos = 80
+    ambiente.queda_abaixo_de = 3.0
+    ambiente.passos = 0
+    ambiente.passos_parado = 0
+    ambiente.z_maximo = 0.5
+    ambiente.z_maximo_valido = 0.5
+    ambiente.motivo = None
+
+    def esperar(_quantidade):
+        corpo.z = 45.0
+        corpo.posicao_mundo = (0.0, corpo.y, corpo.z)
+
+    ambiente._esperar_ticks = esperar
+    _estado, valor, terminou, _truncou, informacoes = ambiente.passo(0)
+
+    verificador.perto(
+        valor, -0.07, 1e-9,
+        'avancar por baixo recebe apenas os custos de passo e falta de pouso',
+    )
+    verificador.verdadeiro(
+        not terminou
+        and informacoes['progresso'] > 0.8
+        and informacoes['progresso_valido'] < 0.02,
+        'o diagnostico separa deslocamento bruto de pouso validado',
+    )
+
+
+def teste_bot_no_ar_parado_e_queda(verificador):
+    ambiente = AmbienteMinecraft.__new__(AmbienteMinecraft)
+    ambiente.percurso = type('Percurso', (), {
+        'y_pe': 125.0,
+        'plataforma_meta': None,
+        'z_chegada': 53.0,
+    })()
+    ambiente.queda_abaixo_de = 3.0
+    ambiente.passos_parado = ambiente.PASSOS_PARADO_MAXIMO
+    ambiente.corpo = type('Corpo', (), {
+        'x': 0.0,
+        'y': 123.0,
+        'z': 20.0,
+        'no_chao': False,
+    })()
+
+    verificador.verdadeiro(
+        ambiente._motivo_terminal(20.0) == 'queda',
+        'parar sem apoio e diagnosticado como queda, nao travamento',
     )
 
 
@@ -428,6 +536,38 @@ def teste_salvamento_concorrente(verificador):
                            'salvamentos simultaneos nao disputam o arquivo')
     verificador.perto(copia.exploracao, 0.5, 1e-9,
                       'o arquivo concorrente permanece valido')
+
+
+def teste_salvamento_repete_apos_acesso_negado(verificador):
+    agente = QLearning(2, 2, {'exploracao_inicial': 0.4})
+    agente.tabela[0][1] = 6.5
+    tentativas = []
+    substituir_real = os.replace
+
+    def substituir_instavel(origem, destino):
+        tentativas.append((origem, destino))
+        if len(tentativas) < 4:
+            raise PermissionError(5, 'Acesso negado', destino)
+        substituir_real(origem, destino)
+
+    with tempfile.TemporaryDirectory() as pasta:
+        caminho = os.path.join(pasta, 'checkpoint.json')
+        with mock.patch(
+            'src.parkour.q_learning.os.replace',
+            side_effect=substituir_instavel,
+        ), mock.patch('src.parkour.q_learning.time.sleep') as esperar:
+            agente.salvar(caminho)
+        copia = QLearning(2, 2)
+        copia.carregar(caminho)
+
+    verificador.verdadeiro(
+        len(tentativas) == 4 and esperar.call_count == 3,
+        'o checkpoint repete a troca quando o Windows bloqueia o arquivo',
+    )
+    verificador.perto(
+        copia.tabela[0][1], 6.5, 1e-9,
+        'o checkpoint salvo depois do bloqueio permanece valido',
+    )
 
 
 def teste_penalidade_de_travamento(verificador):

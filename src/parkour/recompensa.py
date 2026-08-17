@@ -23,6 +23,12 @@ para isso. No mapa oficial ele coincide com +Z; em outros cenarios pode ser X.
 """
 
 
+# Faz parte do nome padrao do modelo. Mudancas que alteram o significado da
+# recompensa precisam iniciar uma tabela nova, sem reaproveitar valores Q
+# aprendidos com o sinal antigo.
+VERSAO_RECOMPENSA = 2
+
+
 class Recompensa:
     def __init__(self, pesos):
         self.progresso = pesos.get('progresso', 1.0)

@@ -1,0 +1,452 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/sa6bqv",
+    "id": "sa6bqv",
+    "slide": 1,
+    "layoutId": "a6c87d4e-ebbe-4f59-b502-55d990604162",
+    "layoutName": "Title Slide",
+    "layoutType": "title",
+    "masterLayoutId": "6d3c38a2-c675-40ab-8c3b-0ba8d7765ee1",
+    "masterLayoutName": "Master",
+    "backgroundColor": "#FFFFFF",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "ChatGPT",
+    "colors": {
+      "accent1": "#156082",
+      "accent2": "#E97132",
+      "accent3": "#196B24",
+      "accent4": "#0F9ED5",
+      "accent5": "#A02B93",
+      "accent6": "#4EA72E",
+      "bg1": "#FFFFFF",
+      "bg2": "#000000",
+      "tx1": "#1F1F1F",
+      "tx2": "#FFFFFF",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#0E2841",
+      "lt2": "#E8E8E8",
+      "hlink": "#467886",
+      "folHlink": "#96607D"
+    },
+    "typefaces": [
+      "Arial"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "a6c87d4e-ebbe-4f59-b502-55d990604162",
+      "name": "Title Slide",
+      "type": "title",
+      "parentLayoutId": "6d3c38a2-c675-40ab-8c3b-0ba8d7765ee1",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "6d3c38a2-c675-40ab-8c3b-0ba8d7765ee1",
+      "name": "Master",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ni9cnmd8",
+      "id": "1",
+      "name": "cover-eyebrow",
+      "bbox": [
+        56,
+        54,
+        540,
+        28
+      ],
+      "geometry": "rect",
+      "text": "INTRODUÇÃO À INTELIGÊNCIA ARTIFICIAL",
+      "textPreview": "INTRODUÇÃO À INTELIGÊNCIA ARTIFICIAL",
+      "resolvedFontSize": 17,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 17,
+        "typeface": "Arial",
+        "color": "#3D8DFF",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "INTRODUÇÃO À INTELIGÊNCIA ARTIFICIAL"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "INTRODUÇÃO À INTELIGÊNCIA ARTIFICIAL",
+          "resolvedTextStyle": {
+            "fontSize": 17,
+            "typeface": "Arial",
+            "color": "#3D8DFF",
+            "bold": true
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "INTRODUÇÃO À INTELIGÊNCIA ARTIFICIAL",
+              "fontSize": 17,
+              "typeface": "Arial",
+              "color": "#3D8DFF",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/8jidgrut",
+      "id": "2",
+      "name": "cover-title",
+      "bbox": [
+        56,
+        130,
+        540,
+        250
+      ],
+      "geometry": "rect",
+      "text": "Q-Learning para\ncontrole de\nparkour",
+      "textPreview": "Q-Learning para | controle de | parkour",
+      "resolvedFontSize": 64,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 64,
+        "typeface": "Arial",
+        "color": "#000000",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "none",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Q-Learning para"
+          },
+          {
+            "index": 2,
+            "text": "controle de"
+          },
+          {
+            "index": 3,
+            "text": "parkour"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Q-Learning para",
+          "lineSpacingPercent": 86000,
+          "resolvedTextStyle": {
+            "fontSize": 64,
+            "typeface": "Arial",
+            "color": "#000000",
+            "bold": true,
+            "lineSpacing": 0.86
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Q-Learning para",
+              "fontSize": 64,
+              "typeface": "Arial",
+              "color": "#000000",
+              "bold": true,
+              "lineSpacing": 0.86
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "controle de",
+          "lineSpacingPercent": 86000,
+          "resolvedTextStyle": {
+            "fontSize": 64,
+            "typeface": "Arial",
+            "color": "#000000",
+            "bold": true,
+            "lineSpacing": 0.86
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "controle de",
+              "fontSize": 64,
+              "typeface": "Arial",
+              "color": "#000000",
+              "bold": true,
+              "lineSpacing": 0.86
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 3,
+          "text": "parkour",
+          "lineSpacingPercent": 86000,
+          "resolvedTextStyle": {
+            "fontSize": 64,
+            "typeface": "Arial",
+            "color": "#000000",
+            "bold": true,
+            "lineSpacing": 0.86
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "parkour",
+              "fontSize": 64,
+              "typeface": "Arial",
+              "color": "#000000",
+              "bold": true,
+              "lineSpacing": 0.86
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/9kbupwve",
+      "id": "3",
+      "name": "cover-subtitle",
+      "bbox": [
+        56,
+        418,
+        520,
+        112
+      ],
+      "geometry": "rect",
+      "text": "Aprendizado por reforço tabular em um ambiente 3D, com estados, ações e recompensas.",
+      "textPreview": "Aprendizado por reforço tabular em um ambiente 3D, com estados, ações e recompensas.",
+      "resolvedFontSize": 25,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 25,
+        "typeface": "Arial",
+        "color": "#5B6472",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Aprendizado por reforço tabular em um"
+          },
+          {
+            "index": 2,
+            "text": "ambiente 3D, com estados, ações e"
+          },
+          {
+            "index": 3,
+            "text": "recompensas."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Aprendizado por reforço tabular em um ambiente 3D, com estados, ações e recompensas.",
+          "lineSpacingPercent": 108000,
+          "resolvedTextStyle": {
+            "fontSize": 25,
+            "typeface": "Arial",
+            "color": "#5B6472",
+            "lineSpacing": 1.08
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Aprendizado por reforço tabular em um ambiente 3D, com estados, ações e recompensas.",
+              "fontSize": 25,
+              "typeface": "Arial",
+              "color": "#5B6472",
+              "lineSpacing": 1.08
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/alkvi1cz",
+      "id": "4",
+      "name": "cover-accent",
+      "bbox": [
+        56,
+        574,
+        144,
+        6
+      ],
+      "geometry": "rect",
+      "fillColor": "#3D8DFF",
+      "lineWidth": 0
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/vmtcr6dk",
+      "id": "5",
+      "name": "cover-scope",
+      "bbox": [
+        56,
+        598,
+        520,
+        54
+      ],
+      "geometry": "rect",
+      "text": "Minecraft é apenas o ambiente experimental; o foco é a IA.",
+      "textPreview": "Minecraft é apenas o ambiente experimental; o foco é a IA.",
+      "resolvedFontSize": 18,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 18,
+        "typeface": "Arial",
+        "color": "#5B6472",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Minecraft é apenas o ambiente experimental; o foco é a IA."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Minecraft é apenas o ambiente experimental; o foco é a IA.",
+          "resolvedTextStyle": {
+            "fontSize": 18,
+            "typeface": "Arial",
+            "color": "#5B6472"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Minecraft é apenas o ambiente experimental; o foco é a IA.",
+              "fontSize": 18,
+              "typeface": "Arial",
+              "color": "#5B6472"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 6,
+      "kind": "image",
+      "scope": "slide",
+      "aid": "im/t0vupgz2",
+      "id": "6",
+      "bbox": [
+        658,
+        42,
+        582,
+        588
+      ],
+      "geometry": "roundRect",
+      "alt": "Bot voxel saltando entre plataformas de parkour com partículas azuis de aprendizado",
+      "contentType": "image/png",
+      "imageFit": "cover",
+      "imageMask": {
+        "geometry": "roundRect",
+        "adjustmentList": [
+          {
+            "name": "adj",
+            "formula": "val 3093"
+          }
+        ]
+      },
+      "asset": {
+        "assetId": "a451ea3f-fd97-4398-baff-6c26ad95ff84",
+        "contentType": "image/png",
+        "byteLength": 1989231
+      }
+    }
+  ],
+  "composeRuns": []
+}

@@ -44,7 +44,14 @@ class AmbienteMinecraft:
             distancia_maxima=parametros_estado.get('distancia_maxima', 4),
             modo=parametros_estado.get('modo', 'mascara'),
         )
-        self.recompensa = Recompensa(configuracao.get('recompensa', {}))
+        parametros_recompensa = configuracao.get('recompensa', {})
+        self.recompensa = Recompensa(parametros_recompensa)
+        # Nos percursos de blocos separados, deslocamento no ar so vira
+        # progresso quando termina em um apoio real. Outros cenarios podem
+        # manter o deslocamento continuo, necessario em trechos de escalada.
+        self.progresso_exige_pouso = bool(
+            parametros_recompensa.get('progresso_exige_pouso', False)
+        )
         self.corpo = _CorpoDoBot(bot, percurso.transformacao)
 
         self.passos = 0
@@ -141,6 +148,10 @@ class AmbienteMinecraft:
     def passo(self, acao):
         """Executa uma acao por alguns ticks e calcula a recompensa real."""
         progresso_antes = self.corpo.z
+        progresso_recompensa_antes = (
+            self.z_maximo_valido
+            if self.progresso_exige_pouso else progresso_antes
+        )
         self._aplicar(acoes.entradas_de(acao))
 
         # Uma acao dura varios ticks, mas um pouso pode durar somente um deles.
@@ -183,9 +194,13 @@ class AmbienteMinecraft:
         if terminou or truncou:
             self.soltar_controles()
 
+        progresso_recompensa_depois = (
+            self.z_maximo_valido
+            if self.progresso_exige_pouso else progresso_depois
+        )
         recompensa = self.recompensa.calcular(
-            progresso_antes,
-            progresso_depois,
+            progresso_recompensa_antes,
+            progresso_recompensa_depois,
             self.motivo if terminou else None,
         )
         return self.observar(), recompensa, terminou, truncou, self.informacoes()
@@ -197,7 +212,9 @@ class AmbienteMinecraft:
         if self._atingiu_meta(progresso):
             return 'meta'
         if self.passos_parado >= self.PASSOS_PARADO_MAXIMO:
-            return 'travado'
+            # Um bot sem apoio que deixa de avancar caiu do percurso. Chamar
+            # isso de travamento escondia quedas sob a pista nos diagnosticos.
+            return 'travado' if self.corpo.no_chao else 'queda'
         return None
 
     def _atingiu_meta(self, progresso=None):

@@ -1,0 +1,184 @@
+{"kind":"slide","id":"sl/ag8m68","slide":1,"title":"INTELIGÊNCIA ARTIFICIAL NO MINECRAFT","textShapes":4}
+{"kind":"textbox","id":"sh/t0j218ri","slide":1,"textChars":36,"textLines":1}
+{"kind":"textbox","id":"sh/6x83qt8r","slide":1,"textChars":33,"textLines":3}
+{"kind":"textbox","id":"sh/7y1kzy9c","slide":1,"textChars":91,"textLines":1}
+{"kind":"shape","id":"sh/g3alwnq9","slide":1,"name":"cover-accent","bbox":[56,574,144,6]}
+{"kind":"textbox","id":"sh/h4j258re","slide":1,"textChars":49,"textLines":1}
+{"kind":"image","id":"im/j254nqd0","slide":1,"name":"","geometry":"roundRect","alt":"Bot voxel saltando entre plataformas de parkour com partículas azuis de aprendizado","bbox":[658,42,582,588]}
+{"kind":"notes","id":"nt/ag8m68","slide":1,"text":"Responsável sugerido: Integrante 1 | Tempo: 0min30s |  | Abrir com a pergunta..."}
+{"kind":"slide","id":"sl/c3rq8g","slide":2,"title":"PROBLEMA ESCOLHIDO","textShapes":18}
+{"kind":"textbox","id":"sh/g3m507e5","slide":2,"textChars":18,"textLines":1}
+{"kind":"textbox","id":"sh/v2do72d0","slide":2,"textChars":46,"textLines":1}
+{"kind":"textbox","id":"sh/uh4nyxwf","slide":2,"textChars":2,"textLines":1}
+{"kind":"textbox","id":"sh/58f6dcv2","slide":2,"textChars":49,"textLines":2}
+{"kind":"textbox","id":"sh/476p47eh","slide":2,"textChars":141,"textLines":3}
+{"kind":"textbox","id":"sh/36dob2dw","slide":2,"textChars":21,"textLines":1}
+{"kind":"shape","id":"sh/i5472xwb","slide":2,"name":"agenda-rule-0","bbox":[666,306,504,1]}
+{"kind":"textbox","id":"sh/dcf6hwvy","slide":2,"textChars":2,"textLines":1}
+{"kind":"textbox","id":"sh/sb6p8red","slide":2,"textChars":8,"textLines":1}
+{"kind":"textbox","id":"sh/mtcnu1w3","slide":2,"textChars":5,"textLines":1}
+{"kind":"shape","id":"sh/nul436xo","slide":2,"name":"agenda-rule-1","bbox":[666,384,504,1]}
+{"kind":"textbox","id":"sh/8vu5wbe9","slide":2,"textChars":2,"textLines":1}
+{"kind":"textbox","id":"sh/9w3m5gfu","slide":2,"textChars":9,"textLines":1}
+{"kind":"textbox","id":"sh/axcnylwf","slide":2,"textChars":5,"textLines":1}
+{"kind":"shape","id":"sh/vyl47qxk","slide":2,"name":"agenda-rule-2","bbox":[666,462,504,1]}
+{"kind":"textbox","id":"sh/wzu50ve5","slide":2,"textChars":2,"textLines":1}
+{"kind":"textbox","id":"sh/xk3m9gfq","slide":2,"textChars":13,"textLines":1}
+{"kind":"textbox","id":"sh/q183mhwv","slide":2,"textChars":5,"textLines":1}
+{"kind":"shape","id":"sh/r214vmxg","slide":2,"name":"agenda-rule-3","bbox":[666,540,504,1]}
+{"kind":"textbox","id":"sh/f6xk3id8","slide":2,"textChars":2,"textLines":1}
+{"kind":"textbox","id":"sh/u5ojudcn","slide":2,"textChars":22,"textLines":1}
+{"kind":"textbox","id":"sh/h8f25sve","slide":2,"textChars":5,"textLines":1}
+{"kind":"notes","id":"nt/c3rq8g","slide":2,"text":"Responsável sugerido: Integrante 1 | Tempo: 1min30s |  | Definir o problema c..."}
+{"kind":"slide","id":"sl/bsuzkf","slide":3,"title":"PROBLEMA ESCOLHIDO","textShapes":14}
+{"kind":"textbox","id":"sh/1c7ihk7e","slide":3,"textChars":18,"textLines":1}
+{"kind":"textbox","id":"sh/e9wzm58n","slide":3,"textChars":44,"textLines":1}
+{"kind":"textbox","id":"sh/za50fap8","slide":3,"textChars":2,"textLines":1}
+{"kind":"textbox","id":"sh/c7ehkvqx","slide":3,"textChars":69,"textLines":1}
+{"kind":"shape","id":"sh/d8nid072","slide":3,"name":"track-line","bbox":[86,342,1045,2]}
+{"kind":"shape","id":"sh/qlwzil8r","slide":3,"name":"track-dot-0","bbox":[78,333,18,18]}
+{"kind":"textbox","id":"sh/rm50bqpc","slide":3,"textChars":2,"textLines":1}
+{"kind":"textbox","id":"sh/4juhgvql","slide":3,"textChars":8,"textLines":1}
+{"kind":"textbox","id":"sh/5k3i9g76","slide":3,"textChars":31,"textLines":2}
+{"kind":"shape","id":"sh/d4bqtwzy","slide":3,"name":"track-dot-1","bbox":[478,333,18,18]}
+{"kind":"textbox","id":"sh/c329krid","slide":3,"textChars":2,"textLines":1}
+{"kind":"textbox","id":"sh/b2t8r6hs","slide":3,"textChars":8,"textLines":1}
+{"kind":"textbox","id":"sh/q1kri107","slide":3,"textChars":32,"textLines":2}
+{"kind":"shape","id":"sh/p0bqpwz2","slide":3,"name":"track-dot-2","bbox":[878,333,18,18]}
+{"kind":"textbox","id":"sh/of29grih","slide":3,"textChars":2,"textLines":1}
+{"kind":"textbox","id":"sh/3et8nmhw","slide":3,"textChars":8,"textLines":1}
+{"kind":"textbox","id":"sh/2d0reh0b","slide":3,"textChars":31,"textLines":2}
+{"kind":"textbox","id":"sh/1crqlczq","slide":3,"textChars":78,"textLines":1}
+{"kind":"notes","id":"nt/bsuzkf","slide":3,"text":"Responsável sugerido: Integrante 1 | Tempo: 1min00s |  | Mostrar que o labiri..."}
+{"kind":"slide","id":"sl/o5bmoz","slide":4,"title":"MODELAGEM","textShapes":15}
+{"kind":"textbox","id":"sh/6hszyhk7","slide":4,"textChars":9,"textLines":1}
+{"kind":"textbox","id":"sh/tkjytc3y","slide":4,"textChars":37,"textLines":1}
+{"kind":"textbox","id":"sh/8jah0r2d","slide":4,"textChars":2,"textLines":1}
+{"kind":"shape","id":"sh/v6lgvml4","slide":4,"name":"model-arrow-1","bbox":[383,337,80,20]}
+{"kind":"shape","id":"sh/ulsz2hkj","slide":4,"name":"model-arrowhead-1","bbox":[451,326,34,42]}
+{"kind":"shape","id":"sh/h83yxwju","slide":4,"name":"model-arrow-2","bbox":[794,337,80,20]}
+{"kind":"shape","id":"sh/g7uh4r2p","slide":4,"name":"model-arrowhead-2","bbox":[862,326,34,42]}
+{"kind":"shape","id":"sh/3algz610","slide":4,"name":"model-panel-0","bbox":[56,202,344,390]}
+{"kind":"textbox","id":"sh/i9cz61kf","slide":4,"textChars":6,"textLines":1}
+{"kind":"textbox","id":"sh/s3axg7yx","slide":4,"textChars":5,"textLines":1}
+{"kind":"textbox","id":"sh/t43e9cfi","slide":4,"textChars":9,"textLines":1}
+{"kind":"textbox","id":"sh/61sfexgr","slide":4,"textChars":71,"textLines":3}
+{"kind":"shape","id":"sh/r21w72xc","slide":4,"name":"model-panel-1","bbox":[468,202,344,390]}
+{"kind":"textbox","id":"sh/g7uxk7yt","slide":4,"textChars":5,"textLines":1}
+{"kind":"textbox","id":"sh/183edcfe","slide":4,"textChars":1,"textLines":1}
+{"kind":"textbox","id":"sh/e5cfixgn","slide":4,"textChars":9,"textLines":1}
+{"kind":"textbox","id":"sh/f6lwb2x8","slide":4,"textChars":41,"textLines":4}
+{"kind":"shape","id":"sh/ovexore5","slide":4,"name":"model-panel-2","bbox":[880,202,344,390]}
+{"kind":"textbox","id":"sh/pwnehwfa","slide":4,"textChars":10,"textLines":1}
+{"kind":"textbox","id":"sh/dgz6ls3i","slide":4,"textChars":5,"textLines":1}
+{"kind":"textbox","id":"sh/cfq5cn2x","slide":4,"textChars":6,"textLines":1}
+{"kind":"textbox","id":"sh/behojilc","slide":4,"textChars":60,"textLines":2}
+{"kind":"notes","id":"nt/o5bmoz","slide":4,"text":"Responsável sugerido: Integrante 2 | Tempo: 1min45s |  | Explicar que Q-Learn..."}
+{"kind":"slide","id":"sl/ez852a","slide":5,"title":"MODELAGEM","textShapes":9}
+{"kind":"textbox","id":"sh/d4zad4vu","slide":5,"textChars":9,"textLines":1}
+{"kind":"textbox","id":"sh/q1oripw3","slide":5,"textChars":44,"textLines":1}
+{"kind":"textbox","id":"sh/b2xsrudo","slide":5,"textChars":2,"textLines":1}
+{"kind":"shape","id":"sh/krq9ozel","slide":5,"name":"bellman-panel","bbox":[56,194,566,374]}
+{"kind":"textbox","id":"sh/lszah4v6","slide":5,"textChars":22,"textLines":1}
+{"kind":"textbox","id":"sh/y58rmpwf","slide":5,"textChars":53,"textLines":2}
+{"kind":"textbox","id":"sh/zqhsfud0","slide":5,"textChars":21,"textLines":1}
+{"kind":"textbox","id":"sh/8va9sjeh","slide":5,"textChars":25,"textLines":1}
+{"kind":"textbox","id":"sh/9wjalov2","slide":5,"textChars":14,"textLines":1}
+{"kind":"textbox","id":"sh/d8ruhoza","slide":5,"textChars":158,"textLines":3}
+{"kind":"notes","id":"nt/ez852a","slide":5,"text":"Responsável sugerido: Integrante 2 | Tempo: 1min30s |  | Ler a equação em lin..."}
+{"kind":"slide","id":"sl/vfcj2k","slide":6,"title":"IMPLEMENTAÇÃO SIMPLES","textShapes":19}
+{"kind":"textbox","id":"sh/cfu18zuh","slide":6,"textChars":21,"textLines":1}
+{"kind":"textbox","id":"sh/rel0zudw","slide":6,"textChars":53,"textLines":1}
+{"kind":"textbox","id":"sh/qdcj6pcb","slide":6,"textChars":2,"textLines":1}
+{"kind":"shape","id":"sh/pc3ixkv6","slide":6,"name":"cycle-link-0","bbox":[236,352,46,12]}
+{"kind":"shape","id":"sh/4bu14ful","slide":6,"name":"cycle-head-0","bbox":[272,342,24,32]}
+{"kind":"shape","id":"sh/3a10vad0","slide":6,"name":"cycle-link-1","bbox":[472,352,46,12]}
+{"kind":"shape","id":"sh/29sj25cf","slide":6,"name":"cycle-head-1","bbox":[508,342,24,32]}
+{"kind":"shape","id":"sh/98n29oba","slide":6,"name":"cycle-link-2","bbox":[708,352,46,12]}
+{"kind":"shape","id":"sh/o7e10jup","slide":6,"name":"cycle-head-2","bbox":[744,342,24,32]}
+{"kind":"shape","id":"sh/6l0r2xsn","slide":6,"name":"cycle-link-3","bbox":[944,352,46,12]}
+{"kind":"shape","id":"sh/7698v298","slide":6,"name":"cycle-head-3","bbox":[980,342,24,32]}
+{"kind":"shape","id":"sh/s7i947at","slide":6,"name":"cycle-node-0","bbox":[56,260,190,206]}
+{"kind":"textbox","id":"sh/t8rqxcre","slide":6,"textChars":1,"textLines":1}
+{"kind":"textbox","id":"sh/ihg7yxsr","slide":6,"textChars":9,"textLines":1}
+{"kind":"textbox","id":"sh/ji98ri9c","slide":6,"textChars":26,"textLines":1}
+{"kind":"shape","id":"sh/kji90nax","slide":6,"name":"cycle-node-1","bbox":[292,260,190,206]}
+{"kind":"textbox","id":"sh/5krqtsri","slide":6,"textChars":1,"textLines":1}
+{"kind":"textbox","id":"sh/2dkrahsv","slide":6,"textChars":6,"textLines":1}
+{"kind":"textbox","id":"sh/3et83m9g","slide":6,"textChars":23,"textLines":1}
+{"kind":"shape","id":"sh/ziloveps","slide":6,"name":"cycle-node-2","bbox":[528,260,190,206]}
+{"kind":"textbox","id":"sh/yhcnm987","slide":6,"textChars":1,"textLines":1}
+{"kind":"textbox","id":"sh/lkn6xo7y","slide":6,"textChars":4,"textLines":1}
+{"kind":"textbox","id":"sh/0je5ojqd","slide":6,"textChars":22,"textLines":1}
+{"kind":"shape","id":"sh/nm5ozep4","slide":6,"name":"cycle-node-3","bbox":[764,260,190,206]}
+{"kind":"textbox","id":"sh/mlwnqt8j","slide":6,"textChars":1,"textLines":1}
+{"kind":"textbox","id":"sh/9on61o7a","slide":6,"textChars":10,"textLines":1}
+{"kind":"textbox","id":"sh/8ne5sjqp","slide":6,"textChars":21,"textLines":1}
+{"kind":"shape","id":"sh/vqpo3yp0","slide":6,"name":"cycle-node-4","bbox":[1000,260,190,206]}
+{"kind":"textbox","id":"sh/apwnut8f","slide":6,"textChars":1,"textLines":1}
+{"kind":"textbox","id":"sh/sfy5k3mt","slide":6,"textChars":8,"textLines":1}
+{"kind":"textbox","id":"sh/tg7mt8ne","slide":6,"textChars":24,"textLines":1}
+{"kind":"textbox","id":"sh/6tgnit4n","slide":6,"textChars":76,"textLines":1}
+{"kind":"notes","id":"nt/vfcj2k","slide":6,"text":"Responsável sugerido: Integrante 2 | Tempo: 1min30s |  | Percorrer o fluxo da..."}
+{"kind":"slide","id":"sl/apoyex","slide":7,"title":"IMPLEMENTAÇÃO SIMPLES","textShapes":7}
+{"kind":"textbox","id":"sh/mxwr290z","slide":7,"textChars":21,"textLines":1}
+{"kind":"textbox","id":"sh/9k7qd4jq","slide":7,"textChars":57,"textLines":1}
+{"kind":"textbox","id":"sh/8jy94ji5","slide":7,"textChars":2,"textLines":1}
+{"kind":"textbox","id":"sh/zu587u1o","slide":7,"textChars":21,"textLines":1}
+{"kind":"shape","id":"sh/ytw7yp03","slide":7,"name":"code-panel","bbox":[56,244,560,326]}
+{"kind":"textbox","id":"sh/lwnq94je","slide":7,"textChars":125,"textLines":6}
+{"kind":"textbox","id":"sh/0ve90zi9","slide":7,"textChars":24,"textLines":1}
+{"kind":"textbox","id":"sh/bql83u1c","slide":7,"textChars":230,"textLines":4}
+{"kind":"notes","id":"nt/apoyex","slide":7,"text":"Responsável sugerido: Integrante 3 | Tempo: 1min30s |  | Mostrar que a equaçã..."}
+{"kind":"slide","id":"sl/l146ye","slide":8,"title":"IMPLEMENTAÇÃO SIMPLES","textShapes":8}
+{"kind":"textbox","id":"sh/zqxkzqxw","slide":8,"textChars":21,"textLines":1}
+{"kind":"textbox","id":"sh/0r6l8ve1","slide":8,"textChars":43,"textLines":1}
+{"kind":"textbox","id":"sh/lsf210fm","slide":8,"textChars":2,"textLines":1}
+{"kind":"textbox","id":"sh/ql4j2lwz","slide":8,"textChars":26,"textLines":1}
+{"kind":"textbox","id":"sh/bmdkvqxk","slide":8,"textChars":36,"textLines":1}
+{"kind":"shape","id":"sh/cnm14ve5","slide":8,"name":"parallel-divider","bbox":[642,178,2,390]}
+{"kind":"textbox","id":"sh/dof2xgfq","slide":8,"textChars":32,"textLines":1}
+{"kind":"textbox","id":"sh/2x4jy1w3","slide":8,"textChars":206,"textLines":4}
+{"kind":"shape","id":"sh/3ydkr6xo","slide":8,"name":"parallel-callout","bbox":[56,390,544,160]}
+{"kind":"textbox","id":"sh/zi1sjq5o","slide":8,"textChars":84,"textLines":1}
+{"kind":"notes","id":"nt/l146ye","slide":8,"text":"Responsável sugerido: Integrante 3 | Tempo: 1min15s |  | Diferenciar paraleli..."}
+{"kind":"slide","id":"sl/y29f5x","slide":9,"title":"RESULTADOS","textShapes":13}
+{"kind":"textbox","id":"sh/xwb61wz6","slide":9,"textChars":10,"textLines":1}
+{"kind":"textbox","id":"sh/at0n6hgf","slide":9,"textChars":47,"textLines":1}
+{"kind":"textbox","id":"sh/bu9ozmh0","slide":9,"textChars":2,"textLines":1}
+{"kind":"textbox","id":"sh/kz25cryh","slide":9,"textChars":114,"textLines":1}
+{"kind":"shape","id":"sh/l0b65wf2","slide":9,"name":"metric-panel-1","bbox":[56,304,354,304]}
+{"kind":"textbox","id":"sh/yxkna1gr","slide":9,"textChars":5,"textLines":1}
+{"kind":"textbox","id":"sh/zyto36xc","slide":9,"textChars":21,"textLines":1}
+{"kind":"textbox","id":"sh/83mpgbyt","slide":9,"textChars":68,"textLines":1}
+{"kind":"shape","id":"sh/tov69gfe","slide":9,"name":"metric-panel-2","bbox":[463,304,354,304]}
+{"kind":"textbox","id":"sh/1wjq9w7m","slide":9,"textChars":1,"textLines":1}
+{"kind":"textbox","id":"sh/gvap0rq1","slide":9,"textChars":22,"textLines":1}
+{"kind":"textbox","id":"sh/fuh87mpg","slide":9,"textChars":58,"textLines":1}
+{"kind":"shape","id":"sh/et87yh8v","slide":9,"name":"metric-panel-3","bbox":[870,304,354,304]}
+{"kind":"textbox","id":"sh/pkjqdw7i","slide":9,"textChars":5,"textLines":1}
+{"kind":"textbox","id":"sh/oja94bqx","slide":9,"textChars":17,"textLines":1}
+{"kind":"textbox","id":"sh/3i18b6pc","slide":9,"textChars":60,"textLines":1}
+{"kind":"notes","id":"nt/y29f5x","slide":9,"text":"Responsável sugerido: Integrante 4 | Tempo: 1min30s |  | Começar pelo limite:..."}
+{"kind":"slide","id":"sl/bdq26m","slide":10,"title":"RESULTADOS","textShapes":8}
+{"kind":"textbox","id":"sh/exwjqp47","slide":10,"textChars":10,"textLines":1}
+{"kind":"textbox","id":"sh/10n2lk3y","slide":10,"textChars":47,"textLines":1}
+{"kind":"textbox","id":"sh/gze1sfmd","slide":10,"textChars":2,"textLines":1}
+{"kind":"textbox","id":"sh/ru50falg","slide":10,"textChars":20,"textLines":1}
+{"kind":"textbox","id":"sh/6tcjm54v","slide":10,"textChars":161,"textLines":3}
+{"kind":"textbox","id":"sh/twnihk3m","slide":10,"textChars":21,"textLines":1}
+{"kind":"textbox","id":"sh/sve1ofm1","slide":10,"textChars":187,"textLines":3}
+{"kind":"textbox","id":"sh/bqpkrul0","slide":10,"textChars":77,"textLines":1}
+{"kind":"notes","id":"nt/bdq26m","slide":10,"text":"Responsável sugerido: Integrante 4 | Tempo: 1min00s |  | Não tratar a ausênci..."}
+{"kind":"slide","id":"sl/o99bzx","slide":11,"title":"CONCLUSÃO","textShapes":8}
+{"kind":"textbox","id":"sh/tcbeh03e","slide":11,"textChars":9,"textLines":1}
+{"kind":"textbox","id":"sh/690v6lkn","slide":11,"textChars":89,"textLines":3}
+{"kind":"shape","id":"sh/7a9wfql8","slide":11,"name":"close-rule","bbox":[56,426,1168,2]}
+{"kind":"textbox","id":"sh/gf2dcv2p","slide":11,"textChars":9,"textLines":1}
+{"kind":"textbox","id":"sh/hgbel03a","slide":11,"textChars":54,"textLines":1}
+{"kind":"textbox","id":"sh/udkva5kj","slide":11,"textChars":13,"textLines":1}
+{"kind":"textbox","id":"sh/vetwjql4","slide":11,"textChars":60,"textLines":1}
+{"kind":"textbox","id":"sh/4jmdgf21","slide":11,"textChars":13,"textLines":1}
+{"kind":"textbox","id":"sh/54vepkj6","slide":11,"textChars":59,"textLines":1}
+{"kind":"notes","id":"nt/o99bzx","slide":11,"text":"Responsável sugerido: Integrante 4 | Tempo: 0min45s |  | Retomar a pergunta i..."}
+{"kind":"notice","message":"Truncated: omitted 0 lines. Increase maxChars or narrow target."}

@@ -1,0 +1,32 @@
+Communication job: Ao final, a turma deve entender como um agente de Q-Learning tabular aprende parkour diretamente no Minecraft, por que a modelagem do estado e da recompensa é decisiva e quais resultados já foram realmente validados.
+
+Escopo: somente o parkour construído dentro do mapa world_labirinto. O algoritmo de solução de labirintos não é apresentado.
+
+Fontes do projeto:
+- README.md
+- docs/COMO_O_PROJETO_FUNCIONA.md
+- docs/GUIA_Q_LEARNING.md
+- docs/PARTES_PARA_IMPLEMENTAR.md
+- config/parkour.json
+- config/cenarios/labirinto_parkours.json
+- src/parkour/q_learning.py
+- src/parkour/estado.py
+- src/parkour/acoes.py
+- src/parkour/recompensa.py
+- src/parkour/ambiente_mc.py
+- src/parkour/treinar.py
+- testes/teste_q_learning.py
+
+Validação executada em 2026-08-16:
+- C:\Users\miste\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m testes
+- Resultado: 30/30 verificações passaram.
+
+Imagem gerada:
+- Ferramenta: OpenAI ImageGen, modo built-in.
+- Arquivo de trabalho: work/presentation-build/parkour-hero.png
+- Prompt final: cena voxel cinematográfica de um bot autônomo saltando entre plataformas de parkour dentro de um ambiente Minecraft-like; o labirinto aparece apenas como cenário distante; partículas azuis sugerem aprendizado; sem texto, logos ou interface.
+
+Observação sobre resultados:
+- O repositório não contém modelo Q nem CSV de treinamento em resultados/modelos/.
+- Portanto, a apresentação não declara taxa de chegada, curva de aprendizado ou desempenho em jogo.
+- O slide de resultados separa explicitamente validação de software de desempenho experimental pendente.

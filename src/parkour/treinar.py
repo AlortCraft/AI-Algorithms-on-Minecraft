@@ -8,7 +8,7 @@ que organizam episodios e registram resultados.
 import csv
 import os
 
-from . import acoes, config as configuracao_modulo, estado
+from . import acoes, config as configuracao_modulo, estado, recompensa
 from .q_learning import QLearning
 
 
@@ -21,12 +21,20 @@ COLUNAS_RESULTADO = (
 
 def caminho_padrao_modelo(configuracao, nome_trecho):
     rotulo = configuracao_modulo.rotulo_modelo(configuracao, nome_trecho)
+    recompensa_versionada = configuracao.get('recompensa', {}).get(
+        'progresso_exige_pouso', False
+    )
+    sufixo_recompensa = (
+        f'_recompensa_v{recompensa.VERSAO_RECOMPENSA}'
+        if recompensa_versionada else ''
+    )
     return os.path.join(
         configuracao_modulo.RAIZ,
         'resultados',
         'modelos',
         f'q_learning_{rotulo}_acoes_v{acoes.VERSAO_CATALOGO}'
-        f'_estado_v{estado.VERSAO_ESTADO}.json',
+        f'_estado_v{estado.VERSAO_ESTADO}'
+        f'{sufixo_recompensa}.json',
     )
 
 

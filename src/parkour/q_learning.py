@@ -9,6 +9,25 @@ import os
 import random
 import shutil
 import threading
+import time
+
+
+TENTATIVAS_SUBSTITUICAO = 12
+ESPERA_SUBSTITUICAO_INICIAL = 0.02
+
+
+def _substituir_com_tentativas(temporario, destino):
+    """Troca o checkpoint mesmo sob bloqueios breves do Windows/OneDrive."""
+    espera = ESPERA_SUBSTITUICAO_INICIAL
+    for tentativa in range(1, TENTATIVAS_SUBSTITUICAO + 1):
+        try:
+            os.replace(temporario, destino)
+            return
+        except PermissionError:
+            if tentativa == TENTATIVAS_SUBSTITUICAO:
+                raise
+            time.sleep(espera)
+            espera = min(0.5, espera * 2)
 
 
 class QLearning:
@@ -133,7 +152,7 @@ class QLearning:
                 }
             with open(temporario, 'w', encoding='utf-8') as arquivo:
                 json.dump(dados, arquivo)
-            os.replace(temporario, caminho)
+            _substituir_com_tentativas(temporario, caminho)
 
     def carregar(self, caminho):
         with open(caminho, encoding='utf-8') as arquivo:
